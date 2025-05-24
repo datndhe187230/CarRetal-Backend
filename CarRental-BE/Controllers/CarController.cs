@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CarRental_BE.Models;
-using CarRental_BE;
-using EmployeeAdminPortal.Models;
+using CarRental_BE.Models.Entities;
+using CarRental_BE.Data;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -17,22 +17,29 @@ public class CarController : ControllerBase
 
     [HttpGet]
     [Route("All")]
-    public async Task<ActionResult<ApiResponse<string>>> GetAllCar()
+    public async Task<ActionResult<ApiResponse<List<Car>>>> GetAllCar()
     {
         try
         {
-            var anyCar = _context.Cars.FirstOrDefaultAsync();
-            Console.WriteLine(anyCar != null ? "Connected and data exists." : "Connected but no data.");
-            return anyCar != null ? "Connected and data exists." : "Connected but no data.";
+            // Fix: Replace AllAsync with ToListAsync to fetch all cars
+            List<Car> anyCar = await _context.Cars.ToListAsync();
+            var response = new ApiResponse<List<Car>>(
+                status: 200,
+                message: "Connection successful",
+                data: anyCar
+            );
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Connection failed: {ex.Message}");
-
-            return $"Connection failed: {ex.Message}";
+            var errorResponse = new ApiResponse<string>(
+                status: 500,
+                message: "Connection failed",
+                data: $"Connection failed: {ex.Message}"
+            );
+            return StatusCode(500, errorResponse);
         }
     }
-
 
     [HttpGet("test-connection")]
     public async Task<IActionResult> TestConnection()
