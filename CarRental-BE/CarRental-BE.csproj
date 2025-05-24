@@ -23,6 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Models\DTO\" />
+    <Folder Include="Models\VO\" />
+    <Folder Include="Repositories\" />
     <Folder Include="Services\Impliments\" />
     <Folder Include="Services\" />
   </ItemGroup>
