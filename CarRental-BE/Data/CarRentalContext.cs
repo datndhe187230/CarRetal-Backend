@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using CarRental_BE.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace CarRental_BE;
+namespace CarRental_BE.Data;
 
 public partial class CarRentalContext : DbContext
 {
