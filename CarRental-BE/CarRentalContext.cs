@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using CarRental_BE.Models;
+using CarRental_BE.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarRental_BE;

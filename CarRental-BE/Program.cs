@@ -14,11 +14,18 @@ builder.Configuration.AddUserSecrets<Program>();
 // Register DbContext using connection string from user secrets
 builder.Services.AddDbContext<CarRentalContext>(options =>
     options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
-
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        policy => policy.WithOrigins("http://localhost:3000")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+app.UseCors();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
