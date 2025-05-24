@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CarRental_BE.Models;
+namespace CarRental_BE.Models.Entities;
 
 public partial class Role
 {

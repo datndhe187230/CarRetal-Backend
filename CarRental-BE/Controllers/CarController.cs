@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using CarRental_BE.Models;
 using CarRental_BE;
+using EmployeeAdminPortal.Models;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -16,21 +17,27 @@ public class CarController : ControllerBase
 
     [HttpGet]
     [Route("All")]
-    public string GetAllCar()
+    public async Task<ActionResult<ApiResponse<string>>> GetAllCar()
     {
         try
         {
-            var anyCar = _context.Cars.FirstOrDefaultAsync();
-            Console.WriteLine(anyCar != null ? "Connected and data exists." : "Connected but no data.");
-            return anyCar != null ? "Connected and data exists." : "Connected but no data.";
+            var anyCar = await _context.Cars.FirstOrDefaultAsync();
+
+            if (anyCar != null)
+            {
+                return Ok(new ApiResponse<string>(200, "Connected and data exists.", "Connected"));
+            }
+            else
+            {
+                return Ok(new ApiResponse<string>(200, "Connected but no data.", "No data"));
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Connection failed: {ex.Message}");
-
-            return $"Connection failed: {ex.Message}";
+            return StatusCode(500, new ApiResponse<string>(500, $"Connection failed: {ex.Message}", null));
         }
     }
+
 
     [HttpGet("test-connection")]
     public async Task<IActionResult> TestConnection()
