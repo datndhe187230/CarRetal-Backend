@@ -8,5 +8,5 @@ GET http://localhost:5227/api/Car/test-connection
 Accept: application/json
 
 ###
-GET http://localhost:5227/api/car/all
+GET http://localhost:5227/api/Car/All
 Accept: application/json
