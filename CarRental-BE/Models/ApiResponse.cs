@@ -1,4 +1,4 @@
-﻿namespace EmployeeAdminPortal.Models
+﻿namespace CarRental_BE.Models
 {
     public class ApiResponse<T>
     {

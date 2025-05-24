@@ -1,5 +1,4 @@
-
-using CarRental_BE;
+using CarRental_BE.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
