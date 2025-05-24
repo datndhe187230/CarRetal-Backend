@@ -4,3 +4,10 @@ GET {{CarRental_BE_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+GET {{CarRental_BE_HostAddress}}/api/car/All
+
+###
+
+GET {{CarRental_BE_HostAddress}}/api/car/test-connection
+

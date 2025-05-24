@@ -21,12 +21,10 @@ public class CarController : ControllerBase
         try
         {
             var anyCar = _context.Cars.FirstOrDefaultAsync();
-            Console.WriteLine(anyCar != null ? "Connected and data exists." : "Connected but no data.");
             return anyCar != null ? "Connected and data exists." : "Connected but no data.";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Connection failed: {ex.Message}");
 
             return $"Connection failed: {ex.Message}";
         }
