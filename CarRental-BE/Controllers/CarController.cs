@@ -32,7 +32,6 @@ public class CarController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new ApiResponse<string>(500, $"Connection failed: {ex.Message}", null));
             var errorResponse = new ApiResponse<string>(
                 status: 500,
                 message: "Connection failed",
