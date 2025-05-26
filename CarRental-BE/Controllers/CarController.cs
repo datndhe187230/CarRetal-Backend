@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CarRental_BE.Models;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Data;
 

@@ -10,3 +10,7 @@ Accept: application/json
 ###
 GET http://localhost:5227/api/Car/All
 Accept: application/json
+
+###
+GET http://localhost:5227/api/User/profile/3E90353C-1C5D-469E-A572-0579A1C0468D
+Accept: application/json
