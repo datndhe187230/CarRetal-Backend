@@ -1,4 +1,4 @@
-﻿using CarRental_BE.Models.VOs.User;
+﻿using CarRental_BE.Models.VO.User;
 
 namespace CarRental_BE.Services
 {

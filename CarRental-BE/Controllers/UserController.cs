@@ -1,6 +1,6 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models;
-using CarRental_BE.Models.VOs.User;
+using CarRental_BE.Models.VO.User;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Mvc;
 
