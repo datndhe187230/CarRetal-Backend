@@ -20,43 +20,53 @@ namespace CarRental_BE.Controllers
 
         // GET: api/User/profile/{id}
         [HttpGet("profile/{id}")]
-        public async Task<ActionResult<ApiResponse<UserProfileVO>>> GetUserProfile(Guid id)
+        public async Task<ApiResponse<object>> GetUserProfile(Guid id)
         {
             try
             {
                 var profile = await _userService.GetUserProfile(id);
                 if (profile == null)
                 {
-                    return NotFound(new ApiResponse<string>(404, "User profile not found", null));
+                    return new ApiResponse<object>(404, "User profile not found", null);
                 }
 
-                return Ok(new ApiResponse<UserProfileVO>(200, "Success", profile));
+                return new ApiResponse<object>(200, "Success", profile);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<string>(500, "Server error", ex.Message));
+                return new ApiResponse<object>(500, "Server error", ex.Message);
             }
         }
 
+
         [HttpPut("profile/{id}")]
-        public async Task<ActionResult<ApiResponse<UserProfileVO>>> UpdateUserProfile(Guid id, [FromBody] UserUpdateDTO dto)
+        public async Task<ApiResponse<object>> UpdateUserProfile(Guid id, [FromBody] UserUpdateDTO dto)
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                return new ApiResponse<object>(400, "Validation failed", errors);
+            }
+
             try
             {
                 var result = await _userService.UpdateUserProfile(id, dto);
-                if (result==null)
+                if (result == null)
                 {
-                    return NotFound(new ApiResponse<string>(404, "User not found", null));
+                    return new ApiResponse<object>(404, "User not found", null);
                 }
 
-  
-                return Ok(new ApiResponse<UserProfileVO>(200, "User profile updated successfully", result));
+                return new ApiResponse<object>(200, "User profile updated successfully", result);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<string>(500, "Server error", ex.Message));
+                return new ApiResponse<object>(500, "Server error", ex.Message);
             }
         }
+
+
 
 
     }
