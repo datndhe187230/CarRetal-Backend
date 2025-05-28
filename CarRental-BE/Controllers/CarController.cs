@@ -41,6 +41,7 @@ public class CarController : ControllerBase
     }
 
     [HttpGet("test-connection")]
+    
     public async Task<IActionResult> TestConnection()
     {
         try

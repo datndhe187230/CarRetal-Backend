@@ -1,5 +1,7 @@
 using CarRental_BE.Data;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Repositories;
+using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
 using CarRental_BE.Services.Impl;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -64,6 +66,7 @@ var app = builder.Build();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
