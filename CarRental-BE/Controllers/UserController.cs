@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VOs.User;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -36,5 +37,27 @@ namespace CarRental_BE.Controllers
                 return StatusCode(500, new ApiResponse<string>(500, "Server error", ex.Message));
             }
         }
+
+        [HttpPut("profile/{id}")]
+        public async Task<ActionResult<ApiResponse<UserProfileVO>>> UpdateUserProfile(Guid id, [FromBody] UserUpdateDTO dto)
+        {
+            try
+            {
+                var result = await _userService.UpdateUserProfile(id, dto);
+                if (result==null)
+                {
+                    return NotFound(new ApiResponse<string>(404, "User not found", null));
+                }
+
+  
+                return Ok(new ApiResponse<UserProfileVO>(200, "User profile updated successfully", result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<string>(500, "Server error", ex.Message));
+            }
+        }
+
+
     }
 }

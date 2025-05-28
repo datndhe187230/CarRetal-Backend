@@ -14,3 +14,19 @@ Accept: application/json
 ###
 GET http://localhost:5227/api/User/profile/3E90353C-1C5D-469E-A572-0579A1C0468D
 Accept: application/json
+###
+PUT http://localhost:5227/api/User/profile/3E90353C-1C5D-469E-A572-0579A1C0468D
+Content-Type: application/json
+Accept: application/json
+
+{
+  "fullName": "Nguyen Van ABC",
+  "dob": "1995-06-15",
+  "phoneNumber": "0987654321",
+  "nationalId": "123456789",
+  "drivingLicenseUri": "http://example.com/license.jpg",
+  "houseNumberStreet": "123 Nguyen Trai",
+  "ward": "Ward 5",
+  "district": "District 2",
+  "cityProvince": "Ho Chi Minh"
+}
