@@ -43,6 +43,7 @@ namespace CarRental_BE.Services.Impl
             }
 
             var roleAccount = userAccount.Role;
+            var idAccount = userAccount.Id;
             var issuer = _config["Jwt:Issuer"];
             var audience = _config["Jwt:Audience"];
             var key = _config["Jwt:SecretKey"];
@@ -54,7 +55,9 @@ namespace CarRental_BE.Services.Impl
                 Subject = new ClaimsIdentity(new[]
                 {
                         new Claim(JwtRegisteredClaimNames.Email, loginDto.Email),
-                        new Claim(ClaimTypes.Role, roleAccount.Name!)
+                        new Claim(ClaimTypes.Role, roleAccount.Name!),
+                        new Claim("id", idAccount.ToString()!)
+
                     }),
                 Expires = tokenExpiryTimeStamp,
                 Issuer = issuer,
