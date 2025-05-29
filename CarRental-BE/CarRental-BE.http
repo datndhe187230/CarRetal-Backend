@@ -18,5 +18,5 @@ Accept: application/json
 
 {
   "email": "user1@example.com",
-  "password": "hashed_password_1"
+  "password": "new_secure_password"
 }

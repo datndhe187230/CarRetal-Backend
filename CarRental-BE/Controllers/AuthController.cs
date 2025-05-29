@@ -26,6 +26,15 @@ namespace CarRental_BE.Controllers
         public async Task<ActionResult<ApiResponse<LoginVO>>> Login([FromBody] LoginDTO dto)
         {
             var result = await _authService.LoginAsync(dto);
+
+            Response.Cookies.Append("Access_Token", result.Token, new CookieOptions
+            {
+                HttpOnly = true,          
+                Secure = true,            
+                SameSite = SameSiteMode.Strict, 
+                Expires = DateTime.UtcNow.AddHours(1)
+            });
+
             var response = new ApiResponse<LoginVO>(
                 status: 200,
                 message: "Connection successful",
