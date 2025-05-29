@@ -10,7 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace CarRental_BE.Services.Impliments
+namespace CarRental_BE.Services.Impl
 {
     public class AuthServiceImpl : IAuthService
     {
