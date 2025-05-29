@@ -66,7 +66,37 @@ namespace CarRental_BE.Controllers
             }
         }
 
+        [HttpPost("change-password/{id}")]
+        public async Task<ApiResponse<object>> ChangePassword(Guid id, [FromBody] ChangePasswordDTO dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                return new ApiResponse<object>(400, "Validation failed", errors);
+            }
 
+            if (dto.NewPassword != dto.ConfirmPassword)
+            {
+                return new ApiResponse<object>(400, "New password and confirmation don't match", null);
+            }
+
+            try
+            {
+                var result = await _userService.ChangePassword(id, dto);
+                if (!result)
+                {
+                    return new ApiResponse<object>(400, "Password change failed. Check your current password.", null);
+                }
+
+                return new ApiResponse<object>(200, "Password changed successfully", null);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<object>(500, "Server error", ex.Message);
+            }
+        }
 
 
     }
