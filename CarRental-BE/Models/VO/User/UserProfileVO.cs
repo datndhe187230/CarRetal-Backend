@@ -1,4 +1,4 @@
-﻿namespace CarRental_BE.Models.VOs.User
+﻿namespace CarRental_BE.Models.VO.User
 {
     public class UserProfileVO
     {

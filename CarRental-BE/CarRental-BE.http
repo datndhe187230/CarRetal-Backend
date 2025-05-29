@@ -1,4 +1,4 @@
-@CarRental_BE_HostAddress = http://localhost:5227
+﻿@CarRental_BE_HostAddress = http://localhost:5227
 
 GET {{CarRental_BE_HostAddress}}/weatherforecast/
 Accept: application/json
@@ -10,6 +10,16 @@ Accept: application/json
 ###
 GET http://localhost:5227/api/Car/All
 Accept: application/json
+
+###
+POST http://localhost:5227/api/Auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "hashed_password_1"
+}
 
 ###
 GET http://localhost:5227/api/User/profile/3E90353C-1C5D-469E-A572-0579A1C0468D
@@ -26,7 +36,7 @@ Accept: application/json
   "nationalId": "123456789",
   "drivingLicenseUri": "http://example.com/license.jpg",
   "houseNumberStreet": "123 Nguyen Trai",
-  "ward": "Ward 5",
-  "district": "District 2",
-  "cityProvince": "Ho Chi Minh"
+  "ward": "Phường Duyên Hải",
+  "district": "Thành phố Lào Cai",
+  "cityProvince": "Tỉnh Lào Cai"
 }

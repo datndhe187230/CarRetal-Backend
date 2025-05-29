@@ -1,0 +1,78 @@
+﻿using CarRental_BE.Data;
+using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.VO;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Crypto.Generators;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace CarRental_BE.Services.Impl
+{
+    public class AuthServiceImpl : IAuthService
+    {
+        private readonly CarRentalContext _carRentalContext;
+        private readonly IConfiguration _config;
+
+        public AuthServiceImpl(CarRentalContext carRentalContext, IConfiguration config)
+        {
+            _carRentalContext = carRentalContext;
+            _config = config;
+        }
+
+        public async Task<LoginVO> LoginAsync(LoginDTO loginDto)
+        {
+            if (string.IsNullOrWhiteSpace(loginDto.Email) || string.IsNullOrWhiteSpace(loginDto.Password))
+            {
+                throw new ArgumentException("Email and password must be provided.");
+            }
+
+            var userAccount = await _carRentalContext.Accounts
+                                                     .Include(a => a.Role) 
+                                                     .FirstOrDefaultAsync(a => a.Email == loginDto.Email);
+            if (userAccount == null)
+            {
+                throw new InvalidOperationException("User not found.");
+            }
+            else if (!string.Equals(loginDto.Password, userAccount.Password))
+            {
+                throw new UnauthorizedAccessException("Invalid password.");
+            }
+
+            var roleAccount = userAccount.Role;
+            var issuer = _config["Jwt:Issuer"];
+            var audience = _config["Jwt:Audience"];
+            var key = _config["Jwt:SecretKey"];
+            var tokenValidityMins = _config.GetValue<int>("Jwt:TokenValidityMins");
+            var tokenExpiryTimeStamp = DateTime.UtcNow.AddMinutes(tokenValidityMins);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                        new Claim(JwtRegisteredClaimNames.Email, loginDto.Email),
+                        new Claim(ClaimTypes.Role, roleAccount.Name!)
+                    }),
+                Expires = tokenExpiryTimeStamp,
+                Issuer = issuer,
+                Audience = audience,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
+                    SecurityAlgorithms.HmacSha256Signature
+                )
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var securityToken = tokenHandler.CreateToken(tokenDescriptor);
+            var token = tokenHandler.WriteToken(securityToken);
+
+            return new LoginVO
+            {
+                Token = token
+            };
+        }
+    }
+}
