@@ -25,6 +25,9 @@ namespace CarRental_BE.Services.Impl
             var profile = await _repository.UpdateUserProfile(id, dto);
             return profile == null ? null : UserProfileMapper.ToVO(profile);
         }
-
+        public async Task<bool> ChangePassword(Guid id, ChangePasswordDTO dto)
+        {
+            return await _repository.ChangePassword(id, dto);
+        }
     }
 }

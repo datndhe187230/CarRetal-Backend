@@ -40,6 +40,32 @@ namespace CarRental_BE.Repositories.Impl
             return user;
         }
 
+        public async Task<bool> ChangePassword(Guid id, ChangePasswordDTO dto)
+        {
+            if (dto.NewPassword != dto.ConfirmPassword)
+            {
+                return false;
+            }
+
+            var account = await _context.Accounts.FindAsync(id);
+            if (account == null)
+            {
+                return false;
+            }
+
+            // Verify current password (you should hash and compare)
+            if (account.Password != dto.CurrentPassword) // In real app, use proper password hashing
+            {
+                return false;
+            }
+
+            account.Password = dto.NewPassword; // In real app, hash the new password
+            account.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 
 
