@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CarRental_BE.Models;
-using CarRental_BE.Models.Entities;
 using CarRental_BE.Data;
+using CarRental_BE.Models.Entities;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -42,6 +41,7 @@ public class CarController : ControllerBase
     }
 
     [HttpGet("test-connection")]
+    
     public async Task<IActionResult> TestConnection()
     {
         try

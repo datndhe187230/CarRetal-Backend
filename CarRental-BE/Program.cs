@@ -1,9 +1,12 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Repositories;
+using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
-using CarRental_BE.Services.Impliments;
+using CarRental_BE.Services.Impl;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -13,6 +16,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+//Add Repository and Services
+builder.Services.AddScoped<IUserRepository, UserRepositoryImpl>();
+builder.Services.AddScoped<IUserService, UserServiceImpl>();
+
 
 // Load User Secrets (automatically included in Development)
 builder.Configuration.AddUserSecrets<Program>();
@@ -74,6 +86,7 @@ var app = builder.Build();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

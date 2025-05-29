@@ -1,4 +1,4 @@
-﻿namespace CarRental_BE.Models
+﻿namespace CarRental_BE.Data
 {
     public class ApiResponse<T>
     {
