@@ -40,3 +40,10 @@ Accept: application/json
   "district": "Thành phố Lào Cai",
   "cityProvince": "Tỉnh Lào Cai"
 }
+
+
+
+###
+GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D
+Content-Type: application/json
+Accept: application/json

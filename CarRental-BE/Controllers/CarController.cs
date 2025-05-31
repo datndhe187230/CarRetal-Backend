@@ -1,19 +1,25 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using CarRental_BE.Data;
+﻿using CarRental_BE.Data;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")]
 public class CarController : ControllerBase
 {
     private readonly CarRentalContext _context;
+    private readonly ICarService _carService;
 
-    public CarController(CarRentalContext context)
+    //Dependency Injection
+    public CarController(CarRentalContext context, ICarService carService)
     {
         _context = context;
+        _carService = carService;
     }
 
+
+    //Dat
     [HttpGet]
     [Route("All")]
     public async Task<ActionResult<ApiResponse<List<Car>>>> GetAllCar()
@@ -54,4 +60,22 @@ public class CarController : ControllerBase
             return StatusCode(500, $"Connection failed: {ex.Message}");
         }
     }
+
+
+    //Hung
+    [HttpGet("{accountId}")]
+    public async Task<ActionResult<List<Car>>> GetCarsByAccountId(Guid accountId)
+    {
+        try
+        {
+
+            var cars = await _carService.GetCarsByUserId(accountId);
+            return Ok(cars);
+
+        } catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
+
 }
