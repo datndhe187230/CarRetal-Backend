@@ -62,7 +62,7 @@ namespace CarRental_BE.Controllers
             }
             catch (Exception ex)
             {
-                return new ApiResponse<object>(500, "Server error", ex.Message);
+                return new ApiResponse<object>(500, ex.Message, ex.Message);
             }
         }
 

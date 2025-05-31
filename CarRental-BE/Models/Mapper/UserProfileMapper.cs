@@ -18,7 +18,8 @@ namespace CarRental_BE.Models.Mapper
                 HouseNumberStreet = entity.HouseNumberStreet,
                 Ward = entity.Ward,
                 District = entity.District,
-                CityProvince = entity.CityProvince
+                CityProvince = entity.CityProvince,
+                Email = entity.IdNavigation?.Email
             };
         }
     }

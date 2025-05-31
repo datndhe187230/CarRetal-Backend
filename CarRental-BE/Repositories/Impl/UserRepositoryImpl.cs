@@ -23,9 +23,14 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<UserProfile?> UpdateUserProfile(Guid id, UserUpdateDTO dto)
         {
-            var user = await _context.UserProfiles.FindAsync(id);
+            // Include the Account navigation property
+            var user = await _context.UserProfiles
+                .Include(u => u.IdNavigation)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (user == null) return null;
 
+            // Update UserProfile fields
             user.FullName = dto.FullName;
             user.Dob = dto.Dob;
             user.PhoneNumber = dto.PhoneNumber;
@@ -36,7 +41,20 @@ namespace CarRental_BE.Repositories.Impl
             user.District = dto.District;
             user.CityProvince = dto.CityProvince;
 
-            await _context.SaveChangesAsync(); // Không cần gọi Update() vì EF Core đang tracking
+            // Update Account email if it's provided and different from current
+            if (!string.IsNullOrEmpty(dto.Email) && user.IdNavigation.Email != dto.Email)
+            {
+                // Check if new email already exists in database
+                if (await _context.Accounts.AnyAsync(a => a.Email == dto.Email && a.Id != id))
+                {
+                    throw new Exception("Email already exists");
+                }
+
+                user.IdNavigation.Email = dto.Email;
+                user.IdNavigation.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
             return user;
         }
 
