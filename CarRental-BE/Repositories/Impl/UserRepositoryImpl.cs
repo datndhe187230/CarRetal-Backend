@@ -66,6 +66,50 @@ namespace CarRental_BE.Repositories.Impl
             return true;
         }
 
+        public async Task<bool> Register(RegisterDTO dto)
+        {
+            // Check if email already exists
+            if (await _context.Accounts.AnyAsync(x => x.Email == dto.Email))
+            {
+                return false;
+            }
+
+            // Create new account
+            var account = new Account
+            {
+                Id = Guid.NewGuid(),
+                Email = dto.Email,
+                Password = dto.Password, // Note: In production, you should hash the password
+                IsActive = true,
+                IsEmailVerified = false, // Set to true if you have email verification
+                CreatedAt = DateTime.UtcNow,
+                RoleId = dto.RoleId
+            };
+
+            // Create user profile
+            var userProfile = new UserProfile
+            {
+                Id = account.Id,
+                FullName = dto.FullName,
+                PhoneNumber = dto.PhoneNumber,
+                IdNavigation = account
+            };
+
+            // Create wallet for the user
+            var wallet = new Wallet
+            {
+                Id = account.Id,
+                Balance = 0,
+                IdNavigation = account
+            };
+
+            await _context.Accounts.AddAsync(account);
+            await _context.UserProfiles.AddAsync(userProfile);
+            await _context.Wallets.AddAsync(wallet);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 
 

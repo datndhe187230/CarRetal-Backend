@@ -50,5 +50,7 @@ namespace CarRental_BE.Controllers
         {
             return Ok("Logged out");
         }
+
+
     }
 }

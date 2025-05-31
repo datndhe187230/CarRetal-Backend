@@ -51,3 +51,16 @@ Accept: application/json
   "newPassword": "new_secure_password",
   "confirmPassword": "new_secure_password"
 }
+
+  ###
+  POST {{CarRental_BE_HostAddress}}/api/User/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "newpassword123",
+  "confirmPassword": "newpassword123",
+  "fullName": "Nguyễn Văn A",
+  "phoneNumber": "0987654321",
+  "roleId": 2
+}

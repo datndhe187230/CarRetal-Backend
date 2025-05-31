@@ -29,5 +29,13 @@ namespace CarRental_BE.Services.Impl
         {
             return await _repository.ChangePassword(id, dto);
         }
+        public async Task<bool> Register(RegisterDTO dto)
+        {
+            if (dto.Password != dto.ConfirmPassword)
+            {
+                return false;
+            }
+            return await _repository.Register(dto);
+        }
     }
 }
