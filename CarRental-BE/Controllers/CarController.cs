@@ -1,5 +1,7 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Models.Common;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -63,16 +65,23 @@ public class CarController : ControllerBase
 
 
     //Hung
-    [HttpGet("{accountId}")]
-    public async Task<ActionResult<List<Car>>> GetCarsByAccountId(Guid accountId)
+    [HttpGet("{accountId}/paginated")]
+    public async Task<ActionResult<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
+        [FromQuery] int PageNumber = 1,
+        [FromQuery] int PageSize = 10)
     {
         try
         {
+            var request = new PaginationRequest
+            {
+                PageNumber = PageNumber,
+                PageSize = PageSize
+            };
 
-            var cars = await _carService.GetCarsByUserId(accountId);
-            return Ok(cars);
-
-        } catch (Exception ex)
+            var result = await _carService.GetCarsByUserId(accountId, request);
+            return result;
+        }
+        catch (Exception ex)
         {
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
