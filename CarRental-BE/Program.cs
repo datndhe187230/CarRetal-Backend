@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.Mapper;
 using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
@@ -24,6 +25,11 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 //Add Repository and Services
 builder.Services.AddScoped<IUserRepository, UserRepositoryImpl>();
 builder.Services.AddScoped<IUserService, UserServiceImpl>();
+builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
+builder.Services.AddScoped<ICarRepository, CarRepositoryImpl>();
+builder.Services.AddScoped<ICarService, CarServiceImpl>();
+
+
 
 
 // Load User Secrets (automatically included in Development)
@@ -43,7 +49,6 @@ builder.Services.AddCors(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -80,6 +85,9 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+//Register AutoMapper 
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -93,6 +101,9 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+
+
 
 app.UseHttpsRedirection();
 
