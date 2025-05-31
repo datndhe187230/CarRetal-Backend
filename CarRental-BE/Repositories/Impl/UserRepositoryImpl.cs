@@ -66,6 +66,13 @@ namespace CarRental_BE.Repositories.Impl
             return true;
         }
 
+        public async Task<string?> GetUserProfileFullNameByAccountId(Guid accountId)
+        {
+            return await _context.UserProfiles
+                                 .Where(p => p.Id == accountId)
+                                 .Select(p => p.FullName)
+                                 .FirstOrDefaultAsync();
+        }
     }
 
 
