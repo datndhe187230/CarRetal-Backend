@@ -7,6 +7,6 @@ namespace CarRental_BE.Services
     {
         Task<UserProfileVO?> GetUserProfile(Guid id);
         Task<UserProfileVO?> UpdateUserProfile(Guid id, UserUpdateDTO dto);
-
+        Task<bool> ChangePassword(Guid id, ChangePasswordDTO dto);
     }
 }
