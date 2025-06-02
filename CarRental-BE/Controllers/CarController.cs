@@ -66,7 +66,7 @@ public class CarController : ControllerBase
 
     //Hung
     [HttpGet("{accountId}/paginated")]
-    public async Task<ActionResult<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
+    public async Task<ApiResponse<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
         [FromQuery] int PageNumber = 1,
         [FromQuery] int PageSize = 10)
     {
@@ -79,11 +79,25 @@ public class CarController : ControllerBase
             };
 
             var result = await _carService.GetCarsByUserId(accountId, request);
-            return result;
+
+            var response = new ApiResponse<PaginationResponse<CarVO_ViewACar>>(
+                status: 200,
+                message: "Connection successful",
+                data: result
+                );
+
+
+
+            return response;
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            return new ApiResponse<PaginationResponse<CarVO_ViewACar>>(
+                status: 500,
+                message: "Connection failed",
+                data: null
+           );
+
         }
     }
 
