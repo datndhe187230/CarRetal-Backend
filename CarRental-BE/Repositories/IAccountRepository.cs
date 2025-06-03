@@ -5,5 +5,7 @@ namespace CarRental_BE.Repositories
     public interface IAccountRepository
     {
         Task<Account?> getAccountByEmailWithRole(string email);
+
+        Task<Account?> GetAccountById(Guid id);
     }
 }
