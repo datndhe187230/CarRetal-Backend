@@ -29,5 +29,13 @@ namespace CarRental_BE.Repositories.Impl
         return Task.FromResult((cars: cars.Result, totalCount: totalCount));
 
         }
+
+        public async Task<Car?> GetByIdWithBookings(Guid carId)
+        {
+            return await _context.Cars
+                .Include(c => c.Bookings)
+                .FirstOrDefaultAsync(c => c.Id == carId);
+        }
+
     }
 }

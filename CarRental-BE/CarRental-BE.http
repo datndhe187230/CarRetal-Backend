@@ -86,3 +86,7 @@ Content-Type: application/json
   "phoneNumber": "0987654321",
   "roleId": 2
 }
+
+###
+GET http://localhost:5227/api/Car/FAF1542C-ABDB-44B5-8C36-E4D45A303942/detail
+Accept: application/json

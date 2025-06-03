@@ -30,5 +30,23 @@ public class CarServiceImpl : ICarService
         return new PaginationResponse<CarVO_ViewACar>(mapperCars, totalCount, pageSize, pageNumber);
         
     }
-   
+
+    public async Task<CarVO_CarDetail> GetCarDetailById(Guid carId)
+    {
+        var car = await _carRepository.GetByIdWithBookings(carId);
+
+        if (car == null)
+        {
+            return null;
+        }
+
+        var carDetail = _mapper.Map<CarVO_CarDetail>(car);
+
+        // Calculate number of completed rides
+        carDetail.NumberOfRides = car.Bookings?
+            .Count(b => b.Status != null && b.Status.Equals("completed", StringComparison.OrdinalIgnoreCase)) ?? 0;
+
+        return carDetail;
+    }
+
 }
