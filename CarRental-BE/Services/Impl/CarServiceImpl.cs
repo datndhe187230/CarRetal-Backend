@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CarRental_BE.Models.Common;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Repositories;
 using CarRental_BE.Services;
@@ -14,14 +15,20 @@ public class CarServiceImpl : ICarService
         _mapper = mapper;
     }
 
-    public async Task<List<CarVO_ViewACar>> GetCarsByUserId(Guid accountId)
+    public async Task<PaginationResponse<CarVO_ViewACar>> GetCarsByUserId(
+        Guid accountId, 
+        PaginationRequest request)
     {
-        var cars = await _carRepository.GetAccountId(accountId);
+        var pageNumber = request.PageNumber;
+        var pageSize = request.PageSize;
 
-        if (cars == null || !cars.Any())
-            return new List<CarVO_ViewACar>();
+        var (cars, totalCount) = await _carRepository.GetAccountId
+            (accountId, pageNumber, pageSize);
 
-        return _mapper.Map<List<CarVO_ViewACar>>(cars);
+        var mapperCars = _mapper.Map<List<CarVO_ViewACar>>(cars);
+
+        return new PaginationResponse<CarVO_ViewACar>(mapperCars, totalCount, pageSize, pageNumber);
+        
     }
-
+   
 }
