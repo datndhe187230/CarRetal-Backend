@@ -4,9 +4,9 @@ namespace CarRental_BE.Repositories
 {
     public interface ICarRepository
     {
-
-        Task<List<Car>> GetAccountId(Guid accountId);
-
-
+        Task<(List<Car> cars, int totalCount)> GetAccountId(
+            Guid accountId, 
+            int pageNumber, 
+            int pageSize);
     }
 }

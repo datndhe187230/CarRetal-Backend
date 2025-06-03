@@ -14,14 +14,20 @@ namespace CarRental_BE.Repositories.Impl
             _context = context;
         }
 
-        public async Task<List<Car>> GetAccountId(Guid accountId)
+        public Task<(List<Car> cars, int totalCount)> GetAccountId(
+            Guid accountId, 
+            int pageNumber, 
+            int pageSize)
         {
-            return await _context.Cars
-                .Where(c => c.AccountId == accountId)
+            var query = _context.Cars.Where(c => c.AccountId == accountId);
+
+            var totalCount = query.Count();
+            var cars = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+        return Task.FromResult((cars: cars.Result, totalCount: totalCount));
+
         }
-
     }
-
-
 }
