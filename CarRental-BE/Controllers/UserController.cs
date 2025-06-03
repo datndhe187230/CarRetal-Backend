@@ -62,7 +62,7 @@ namespace CarRental_BE.Controllers
             }
             catch (Exception ex)
             {
-                return new ApiResponse<object>(500, "Server error", ex.Message);
+                return new ApiResponse<object>(500, ex.Message, ex.Message);
             }
         }
 
@@ -91,6 +91,38 @@ namespace CarRental_BE.Controllers
                 }
 
                 return new ApiResponse<object>(200, "Password changed successfully", null);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<object>(500, "Server error", ex.Message);
+            }
+        }
+
+        [HttpPost("register")]
+        public async Task<ApiResponse<object>> Register([FromBody] RegisterDTO dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                return new ApiResponse<object>(400, "Validation failed", errors);
+            }
+
+            if (dto.Password != dto.ConfirmPassword)
+            {
+                return new ApiResponse<object>(400, "Password and confirmation don't match", null);
+            }
+
+            try
+            {
+                var result = await _userService.Register(dto);
+                if (!result)
+                {
+                    return new ApiResponse<object>(400, "Registration failed. Email may already exist.", null);
+                }
+
+                return new ApiResponse<object>(200, "Registration successful", null);
             }
             catch (Exception ex)
             {

@@ -70,5 +70,7 @@ namespace CarRental_BE.Controllers
                 data: null
             ));
         }
+
+
     }
 }

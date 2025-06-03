@@ -28,5 +28,7 @@ namespace CarRental_BE.Models.DTO
 
       
         public string? CityProvince { get; set; }
+
+        public string? Email { get; set; }
     }
 }
