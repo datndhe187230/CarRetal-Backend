@@ -19,5 +19,11 @@ namespace CarRental_BE.Repositories.Impl
                                       .Include(a => a.Role)
                                       .FirstOrDefaultAsync(a => a.Email == email);
         }
+
+        public async Task<Account?> GetAccountById(Guid id)
+        {
+            return await _carRentalContext.Accounts
+                                      .FirstOrDefaultAsync(a => a.Id == id);
+        }
     }
 }
