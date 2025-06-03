@@ -21,5 +21,6 @@
         public string? District { get; set; }
 
         public string? CityProvince { get; set; }
+        public string? Email { get; set; }
     }
 }
