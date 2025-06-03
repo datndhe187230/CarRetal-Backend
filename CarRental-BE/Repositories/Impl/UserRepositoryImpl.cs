@@ -1,17 +1,26 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Services;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace CarRental_BE.Repositories.Impl
 {
     public class UserRepositoryImpl : IUserRepository
     {
         private readonly CarRentalContext _context;
+        private readonly IAccountRepository _accountRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IRedisService _redisService;
 
-        public UserRepositoryImpl(CarRentalContext context)
+        public UserRepositoryImpl(CarRentalContext context, IAccountRepository accountRepository, IHttpContextAccessor httpContextAccessor, IRedisService redisService)
         {
             _context = context;
+            _accountRepository = accountRepository;
+            _httpContextAccessor = httpContextAccessor;
+            _redisService = redisService;
         }
 
         public async Task<UserProfile?> GetById(Guid id)
@@ -73,8 +82,46 @@ namespace CarRental_BE.Repositories.Impl
                                  .Select(p => p.FullName)
                                  .FirstOrDefaultAsync();
         }
+
+        public async Task ResetPassword(ChangePasswordDTO dto)
+        {
+            var emailClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email);
+            var jtiClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(JwtRegisteredClaimNames.Jti);
+            if (jtiClaim == null)
+            {
+                throw new InvalidOperationException("JWT ID not found in the token.");
+            }
+            if (emailClaim == null)
+            {
+                throw new InvalidOperationException("Email not found in the token.");
+            }
+
+            var email = emailClaim.Value;
+
+            var jti = jtiClaim.Value;
+
+            var storedJTI = await _redisService.GetTokenAsync("Forgot_Password_JTI", email);
+
+            if (storedJTI == null || storedJTI != jti)
+            {
+                throw new InvalidOperationException("Invalid or expired reset password request.");
+            }
+
+            var account = await _accountRepository.getAccountByEmailWithRole(email);
+            if (account == null)
+            {
+                throw new InvalidOperationException("Account not found.");
+            }
+
+            account.Password = dto.NewPassword;
+            account.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            await _redisService.DeleteTokenAsync("Forgot_Password_JTI", email);
+        }
     }
 
 
 }
-   
+

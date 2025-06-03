@@ -10,6 +10,8 @@ namespace CarRental_BE.Repositories
 
         Task<bool> ChangePassword(Guid id, ChangePasswordDTO dto);
 
+        Task ResetPassword(ChangePasswordDTO dto);
+
         Task<string?> GetUserProfileFullNameByAccountId(Guid accountId);
     }
 }

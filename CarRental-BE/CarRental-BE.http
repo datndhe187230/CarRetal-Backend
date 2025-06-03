@@ -72,3 +72,6 @@ Accept: application/json
   "newPassword": "new_secure_password",
   "confirmPassword": "new_secure_password"
 }
+
+###
+POST http://localhost:5227/api/Auth/send-email?to=dizzlove60@gmail.com
