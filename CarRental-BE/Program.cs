@@ -1,4 +1,5 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Middleware;
 using CarRental_BE.Models.Common;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.Mapper;
@@ -25,7 +26,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true;
 });
 //Add Repository and Services
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepositoryImpl>();
 builder.Services.AddScoped<IUserRepository, UserRepositoryImpl>();
 builder.Services.AddScoped<IUserService, UserServiceImpl>();
 builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
@@ -119,6 +120,9 @@ builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
+
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
