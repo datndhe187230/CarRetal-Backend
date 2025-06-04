@@ -69,5 +69,9 @@ namespace CarRental_BE.Models.VO.Car
         public Guid AccountId { get; set; }
 
         public int NumberOfRides { get; set; }
+
+        public int Rating {  get; set; }
+
+        public int TotalRating { get; set; }
     }
 }

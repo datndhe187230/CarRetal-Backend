@@ -34,6 +34,7 @@ namespace CarRental_BE.Repositories.Impl
         {
             return await _context.Cars
                 .Include(c => c.Bookings)
+                    .ThenInclude(b => b.Feedback)  // Add this line
                 .FirstOrDefaultAsync(c => c.Id == carId);
         }
 

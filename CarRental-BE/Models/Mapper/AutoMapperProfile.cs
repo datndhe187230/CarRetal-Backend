@@ -61,7 +61,9 @@ namespace CarRental_BE.Models.Mapper
                 .ForMember(dest => dest.CertificateOfInspectionUriIsVerified, opt => opt.MapFrom(src => src.CertificateOfInspectionUriIsVerified))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.AccountId, opt => opt.MapFrom(src => src.AccountId))
-                .ForMember(dest => dest.NumberOfRides, opt => opt.Ignore()); // This will be set manually
+                .ForMember(dest => dest.NumberOfRides, opt => opt.Ignore())
+                .ForMember(dest => dest.Rating, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalRating, opt => opt.Ignore());
         }
     }
 }

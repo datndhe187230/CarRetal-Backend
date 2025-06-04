@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CarRental_BE.Models.Common;
+using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Repositories;
 using CarRental_BE.Services;
@@ -43,8 +44,27 @@ public class CarServiceImpl : ICarService
         var carDetail = _mapper.Map<CarVO_CarDetail>(car);
 
         // Calculate number of completed rides
-        carDetail.NumberOfRides = car.Bookings?
-            .Count(b => b.Status != null && b.Status.Equals("completed", StringComparison.OrdinalIgnoreCase)) ?? 0;
+        var completedBookings = car.Bookings?
+            .Where(b => b.Status != null && b.Status.Equals("completed", StringComparison.OrdinalIgnoreCase))
+            .ToList() ?? new List<Booking>();
+
+        carDetail.NumberOfRides = completedBookings.Count;
+
+        // Calculate rating and total rating from feedback
+        int totalRatingSum = 0;
+        int feedbackCount = 0;
+
+        foreach (var booking in completedBookings)
+        {
+            if (booking.Feedback != null && booking.Feedback.Rating.HasValue)
+            {
+                totalRatingSum += booking.Feedback.Rating.Value;
+                feedbackCount++;
+            }
+        }
+
+        carDetail.TotalRating = feedbackCount;
+        carDetail.Rating = feedbackCount > 0 ? (int)Math.Round((double)totalRatingSum / feedbackCount) : 0;
 
         return carDetail;
     }
