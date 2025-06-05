@@ -72,3 +72,15 @@ Accept: application/json
   "newPassword": "new_secure_password",
   "confirmPassword": "new_secure_password"
 }
+
+
+###
+PUT http://localhost:5227/api/Car/edit-car/3E90353C-1C5D-469E-A572-0579A1C0468D
+Content-Type: application/json
+Accept: application/json
+
+{
+  "model": "Toyota Vios",
+  "licensePlate": "30A-123.45"
+}
+

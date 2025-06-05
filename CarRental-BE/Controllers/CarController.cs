@@ -3,11 +3,13 @@ using CarRental_BE.Models.Common;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "customer")]
 public class CarController : ControllerBase
 {
     private readonly CarRentalContext _context;
@@ -78,7 +80,7 @@ public class CarController : ControllerBase
                 PageSize = PageSize
             };
 
-            var result = await _carService.GetCarsByUserId(accountId, request);
+            var result = await _carService.GetCarsByAccountId(accountId, request);
 
             var response = new ApiResponse<PaginationResponse<CarVO_ViewACar>>(
                 status: 200,
@@ -99,6 +101,26 @@ public class CarController : ControllerBase
            );
 
         }
+    }
+
+    [HttpGet("edit-car/{carId}")]
+    public async Task<ApiResponse<object>> UpdateCar(Guid carId)
+    {
+        try
+        {
+            var car = await _carService.GetCarById(carId);
+            if (car == null)
+            {
+                return new ApiResponse<object>(404, "Car not found", null);
+            }
+            return new ApiResponse<object>(200, "Update Success", car);
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<object>(500, "Server error", ex.Message);
+        }
+
+
     }
 
 }

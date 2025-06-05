@@ -29,5 +29,20 @@ namespace CarRental_BE.Repositories.Impl
         return Task.FromResult((cars: cars.Result, totalCount: totalCount));
 
         }
+
+        public Task<Car?> GetCarById(Guid carId)
+        {
+            var car = _context.Cars
+                .Include(c => c.Account)
+                .FirstOrDefaultAsync(c => c.Id == carId);
+            return car;
+        }
+
+        public Task<Car?> UpdateCar(Car car)
+        {
+            _context.Cars.Update(car);
+            return _context.SaveChangesAsync().ContinueWith(t => t.IsCompletedSuccessfully ? car : null);
+        }
     }
 }
+
