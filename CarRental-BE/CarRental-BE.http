@@ -38,7 +38,8 @@ Accept: application/json
   "houseNumberStreet": "123 Nguyen Trai",
   "ward": "Phường Duyên Hải",
   "district": "Thành phố Lào Cai",
-  "cityProvince": "Tỉnh Lào Cai"
+  "cityProvince": "Tỉnh Lào Cai",
+  "email":"tmq3007@gmail.comaa"
 }
 
 
@@ -71,6 +72,20 @@ Accept: application/json
   "currentPassword": "hashed_password_1",
   "newPassword": "new_secure_password",
   "confirmPassword": "new_secure_password"
+}
+
+  ###
+  POST {{CarRental_BE_HostAddress}}/api/User/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "newpassword123",
+  "confirmPassword": "newpassword123",
+  "fullName": "Nguyễn Văn A",
+  "phoneNumber": "0987654321",
+  "roleId": 2
+}
 }
 
 

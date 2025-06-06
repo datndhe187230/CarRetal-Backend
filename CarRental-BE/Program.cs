@@ -1,4 +1,6 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Middleware;
+using CarRental_BE.Models.Common;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.Mapper;
 using CarRental_BE.Repositories;
@@ -10,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,15 +26,18 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true;
 });
 //Add Repository and Services
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepositoryImpl>();
 builder.Services.AddScoped<IUserRepository, UserRepositoryImpl>();
 builder.Services.AddScoped<IUserService, UserServiceImpl>();
 builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
 builder.Services.AddScoped<ICarRepository, CarRepositoryImpl>();
 builder.Services.AddScoped<ICarService, CarServiceImpl>();
+builder.Services.AddScoped<IEmailService, EmailServiceImpl>();
+builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
 
-
-
+// Configure email settings
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
 
 // Load User Secrets (automatically included in Development)
 builder.Configuration.AddUserSecrets<Program>();
@@ -50,6 +56,12 @@ builder.Services.AddCors(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var configuration = builder.Configuration.GetConnectionString("Redis");
+    return ConnectionMultiplexer.Connect(configuration);
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -76,11 +88,27 @@ builder.Services.AddAuthentication(options =>
         {
             OnMessageReceived = context =>
             {
-                var token = context.Request.Cookies["Access_Token"];
-                if (!string.IsNullOrEmpty(token))
+                var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
+                var accessToken = context.Request.Cookies["Access_Token"];
+                var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
+
+                // Route-based token selection
+                if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
                 {
-                    context.Token = token;
+                    if (!string.IsNullOrEmpty(forgotPasswordToken))
+                    {
+                        Console.WriteLine(forgotPasswordToken);
+                        context.Token = forgotPasswordToken;
+                    }
                 }
+                else
+                {
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        context.Token = accessToken;
+                    }
+                }
+
                 return Task.CompletedTask;
             }
         };
@@ -92,6 +120,9 @@ builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
+
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -16,10 +16,12 @@ namespace CarRental_BE.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IEmailService _emailService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IEmailService emailService)
         {
             _authService = authService;
+            _emailService = emailService;
         }
 
         [AllowAnonymous]
@@ -30,9 +32,9 @@ namespace CarRental_BE.Controllers
 
             Response.Cookies.Append("Access_Token", result.Token, new CookieOptions
             {
-                HttpOnly = true,          
-                Secure = true,            
-                SameSite = SameSiteMode.Strict, 
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddHours(1)
             });
 
@@ -44,11 +46,31 @@ namespace CarRental_BE.Controllers
             return Ok(response);
         }
 
-        [Authorize]
-        [HttpPost("logout")]
-        public IActionResult Logout()
+        [AllowAnonymous]
+        [HttpPost("send-email-forgot-password")]
+        public async Task<IActionResult> SendEmail([FromBody] ForgotPasswordDTO forgotPasswordDTO)
         {
-            return Ok("Logged out");
+            await _authService.SendEmailResetPasswordAsync(forgotPasswordDTO);
+
+            return Ok(new ApiResponse<string>(
+                 status: 200,
+                 message: "Email sent successfully",
+                 data: null
+            ));
         }
+
+        [Authorize]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ChangePasswordDTO changePasswordDTO)
+        {
+            await _authService.ResetPasswordAsync(changePasswordDTO);
+            return Ok(new ApiResponse<string>(
+                status: 200,
+                message: "Password reset successfully",
+                data: null
+            ));
+        }
+
+
     }
 }
