@@ -32,15 +32,19 @@ public partial class CarRentalContext : DbContext
 
     public virtual DbSet<Wallet> Wallets { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=car-rental.cl22ku0yy1qy.ap-southeast-2.rds.amazonaws.com;Database=CarRental;User Id=admin;Password=quanquan3007;TrustServerCertificate=True;");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__account__3213E83FC9120251");
+            entity.HasKey(e => e.Id).HasName("PK__account__3213E83F810ED317");
 
             entity.ToTable("account");
 
-            entity.HasIndex(e => e.Email, "UQ__account__AB6E6164C0CD80B1").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__account__AB6E6164AB74690D").IsUnique();
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("(newid())")
@@ -64,12 +68,12 @@ public partial class CarRentalContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Accounts)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__account__role_id__6FE99F9F");
+                .HasConstraintName("FK__account__role_id__49C3F6B7");
         });
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingNumber).HasName("PK__booking__3A30D2BD1203780A");
+            entity.HasKey(e => e.BookingNumber).HasName("PK__booking__3A30D2BD9040607F");
 
             entity.ToTable("booking");
 
@@ -140,12 +144,12 @@ public partial class CarRentalContext : DbContext
             entity.HasOne(d => d.Car).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.CarId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__booking__car_id__70DDC3D8");
+                .HasConstraintName("FK__booking__car_id__4AB81AF0");
         });
 
         modelBuilder.Entity<Car>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__car__3213E83FCD1E1C72");
+            entity.HasKey(e => e.Id).HasName("PK__car__3213E83F6C48D400");
 
             entity.ToTable("car");
 
@@ -229,12 +233,12 @@ public partial class CarRentalContext : DbContext
             entity.HasOne(d => d.Account).WithMany(p => p.Cars)
                 .HasForeignKey(d => d.AccountId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__car__account_id__72C60C4A");
+                .HasConstraintName("FK__car__account_id__4CA06362");
         });
 
         modelBuilder.Entity<Feedback>(entity =>
         {
-            entity.HasKey(e => e.BookingNumber).HasName("PK__feedback__3A30D2BDCACAA59D");
+            entity.HasKey(e => e.BookingNumber).HasName("PK__feedback__3A30D2BDC5F97129");
 
             entity.ToTable("feedback");
 
@@ -253,12 +257,12 @@ public partial class CarRentalContext : DbContext
             entity.HasOne(d => d.BookingNumberNavigation).WithOne(p => p.Feedback)
                 .HasForeignKey<Feedback>(d => d.BookingNumber)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__feedback__bookin__73BA3083");
+                .HasConstraintName("FK__feedback__bookin__4D94879B");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__role__3213E83F5B32EA5A");
+            entity.HasKey(e => e.Id).HasName("PK__role__3213E83FF9027B9A");
 
             entity.ToTable("role");
 
@@ -270,7 +274,7 @@ public partial class CarRentalContext : DbContext
 
         modelBuilder.Entity<Transaction>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__transact__3213E83FA1431324");
+            entity.HasKey(e => e.Id).HasName("PK__transact__3213E83F1039FE38");
 
             entity.ToTable("transaction");
 
@@ -300,17 +304,17 @@ public partial class CarRentalContext : DbContext
 
             entity.HasOne(d => d.BookingNumberNavigation).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.BookingNumber)
-                .HasConstraintName("FK__transacti__booki__74AE54BC");
+                .HasConstraintName("FK__transacti__booki__4E88ABD4");
 
             entity.HasOne(d => d.Wallet).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.WalletId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__transacti__walle__75A278F5");
+                .HasConstraintName("FK__transacti__walle__4F7CD00D");
         });
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__user_pro__3213E83FA9CD380B");
+            entity.HasKey(e => e.Id).HasName("PK__user_pro__3213E83FFB7EA4EF");
 
             entity.ToTable("user_profile");
 
@@ -351,7 +355,7 @@ public partial class CarRentalContext : DbContext
 
         modelBuilder.Entity<Wallet>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__wallet__3213E83F0E1EA4EF");
+            entity.HasKey(e => e.Id).HasName("PK__wallet__3213E83F6334CC0B");
 
             entity.ToTable("wallet");
 

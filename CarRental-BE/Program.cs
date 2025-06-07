@@ -44,7 +44,11 @@ builder.Configuration.AddUserSecrets<Program>();
 
 // Register DbContext using connection string from user secrets
 builder.Services.AddDbContext<CarRentalContext>(options =>
-    options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DatabaseConnection")
+       
+    )
+); 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
