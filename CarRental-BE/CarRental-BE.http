@@ -45,22 +45,22 @@ Accept: application/json
 
 #call to get all cars
 ###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D
+GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86
 Content-Type: application/json
 Accept: application/json
 }
 
 ##Lấy trang đầu tiên, 10 records mỗi trang
 ###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D/paginated?pageNumber=1&pageSize=10
+GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86/paginated?pageNumber=1&pageSize=10
 
 #Lấy trang thứ 2, 5 records mỗi trang
 ###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D/paginated?pageNumber=2&pageSize=5
+GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86/paginated?pageNumber=2&pageSize=5
 
 #default pageNumber=1, pageSize=10
 ###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D/paginated
+GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86/paginated
 
 
 ###
