@@ -123,4 +123,33 @@ public class CarController : ControllerBase
 
     }
 
+    [HttpGet("{carId}/detail")]
+    public async Task<ApiResponse<CarVO_CarDetail>> GetCarDetail(Guid carId)
+    {
+        try
+        {
+            var carDetail = await _carService.GetCarDetailById(carId);
+
+            if (carDetail == null)
+            {
+                return new ApiResponse<CarVO_CarDetail>(
+                    status: 404,
+                    message: "Car not found",
+                    data: null);
+            }
+
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 200,
+                message: "Car details retrieved successfully",
+                data: carDetail);
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 500,
+                message: $"Error retrieving car details: {ex.Message}",
+                data: null);
+        }
+    }
+
 }

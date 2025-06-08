@@ -9,6 +9,9 @@ namespace CarRental_BE.Repositories
             int pageNumber, 
             int pageSize);
 
+        Task<Car?> GetByIdWithBookings(Guid carId);
+
+
 
         Task<Car?> GetCarById(Guid carId);
 

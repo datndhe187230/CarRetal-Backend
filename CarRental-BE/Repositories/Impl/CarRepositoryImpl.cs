@@ -30,6 +30,16 @@ namespace CarRental_BE.Repositories.Impl
 
         }
 
+        public async Task<Car?> GetByIdWithBookings(Guid carId)
+        {
+            return await _context.Cars
+                .Include(c => c.Bookings)
+                    .ThenInclude(b => b.Feedback)  // Add this line
+                .FirstOrDefaultAsync(c => c.Id == carId);
+        }
+
+    }
+
         public Task<Car?> GetCarById(Guid carId)
         {
             var car = _context.Cars
