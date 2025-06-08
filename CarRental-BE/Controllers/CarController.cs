@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "customer")]
+[Authorize(Roles = "customer")]
 public class CarController : ControllerBase
 {
     private readonly CarRentalContext _context;

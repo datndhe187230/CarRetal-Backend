@@ -38,7 +38,6 @@ namespace CarRental_BE.Repositories.Impl
                 .FirstOrDefaultAsync(c => c.Id == carId);
         }
 
-    }
 
         public Task<Car?> GetCarById(Guid carId)
         {

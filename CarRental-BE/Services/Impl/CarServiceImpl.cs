@@ -59,9 +59,6 @@ public class CarServiceImpl : ICarService
         return _mapper.Map<CarVO_Full>(updatedCarEntity);
     }
 
-
-    }
-
     public async Task<CarVO_CarDetail> GetCarDetailById(Guid carId)
     {
         var car = await _carRepository.GetByIdWithBookings(carId);

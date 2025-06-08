@@ -6,7 +6,6 @@ namespace CarRental_BE.Services
 {
     public interface ICarService
     {
-        Task<PaginationResponse<CarVO_ViewACar>> GetCarsByUserId(Guid accountId, PaginationRequest request);
         Task<CarVO_CarDetail> GetCarDetailById(Guid carId);
 
         Task<PaginationResponse<CarVO_ViewACar>> GetCarsByAccountId(Guid accountId, PaginationRequest request);
