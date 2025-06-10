@@ -86,3 +86,10 @@ Content-Type: application/json
   "phoneNumber": "0987654321",
   "roleId": 2
 }
+### Get all bookings (paging)
+GET http://localhost:5227/api/Booking?page=1&pageSize=5
+Accept: application/json
+
+### Get bookings by account ID
+GET http://localhost:5227/api/Booking/3E90353C-1C5D-469E-A572-0579A1C0468D
+Accept: application/json

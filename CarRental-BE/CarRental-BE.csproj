@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>CarRental_BE</RootNamespace>
     <UserSecretsId>9acc5fd6-30fc-4ad8-87ef-aa7b090c73ca</UserSecretsId>
+	 <CETCompat>false</CETCompat>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,5 +40,4 @@
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.37" />
   </ItemGroup>
-
 </Project>

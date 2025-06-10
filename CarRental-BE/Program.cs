@@ -34,6 +34,9 @@ builder.Services.AddScoped<ICarRepository, CarRepositoryImpl>();
 builder.Services.AddScoped<ICarService, CarServiceImpl>();
 builder.Services.AddScoped<IEmailService, EmailServiceImpl>();
 builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
+builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
+builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
+
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(
@@ -126,6 +129,10 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+//booking
+
+
+
 
 
 // Configure the HTTP request pipeline.
