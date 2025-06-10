@@ -37,6 +37,8 @@ builder.Services.AddScoped<ICarService, CarServiceImpl>();
 builder.Services.AddScoped<IEmailService, EmailServiceImpl>();
 builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
+builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
+builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
 
 
 //Configure Cloudinary settings
@@ -143,6 +145,10 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+//booking
+
+
+
 
 
 // Configure the HTTP request pipeline.
@@ -151,6 +157,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+//booking
 
 
 
