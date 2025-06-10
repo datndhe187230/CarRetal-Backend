@@ -7,10 +7,12 @@ using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
 using CarRental_BE.Services.Impl;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using System.Text;
@@ -34,8 +36,20 @@ builder.Services.AddScoped<ICarRepository, CarRepositoryImpl>();
 builder.Services.AddScoped<ICarService, CarServiceImpl>();
 builder.Services.AddScoped<IEmailService, EmailServiceImpl>();
 builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
-builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
-builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
+
+
+//Configure Cloudinary settings
+var cloudName = builder.Configuration.GetValue<string>("CloudinarySettings:CloudName");
+var apiKey = builder.Configuration.GetValue<string>("CloudinarySettings:ApiKey");
+var apiSecret = builder.Configuration.GetValue<string>("CloudinarySettings:ApiSecret");
+
+if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
+{
+    throw new ArgumentException("Please specify Cloudinary account details!");
+}
+
+builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
 
 
 // Configure email settings

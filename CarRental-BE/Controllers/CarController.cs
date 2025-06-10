@@ -12,12 +12,15 @@ public class CarController : ControllerBase
 {
     private readonly CarRentalContext _context;
     private readonly ICarService _carService;
+    private readonly ICloudinaryService _cloudinaryService;
 
     //Dependency Injection
-    public CarController(CarRentalContext context, ICarService carService)
+    public CarController(CarRentalContext context, ICarService carService, ICloudinaryService cloudinaryService)
     {
+
         _context = context;
         _carService = carService;
+        _cloudinaryService = cloudinaryService;
     }
 
 
@@ -63,6 +66,29 @@ public class CarController : ControllerBase
         }
     }
 
+    [HttpGet("test-upload")]
+    public async Task<IActionResult> TestUploadConnection()
+    {
+        try
+        {
+            var result = await _cloudinaryService.TestUpload();
+            var response = new ApiResponse<string>(
+                status: 200,
+                message: "Upload test successful",
+                data: result
+            );
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            var errorResponse = new ApiResponse<string>(
+                status: 500,
+                message: "Upload test failed",
+                data: $"Error: {ex.Message}"
+            );
+            return StatusCode(500, errorResponse);
+        }
+    }
 
     //Hung
     [HttpGet("{accountId}/paginated")]
@@ -98,6 +124,35 @@ public class CarController : ControllerBase
                 data: null
            );
 
+        }
+    }
+
+    [HttpGet("{carId}/detail")]
+    public async Task<ApiResponse<CarVO_CarDetail>> GetCarDetail(Guid carId)
+    {
+        try
+        {
+            var carDetail = await _carService.GetCarDetailById(carId);
+
+            if (carDetail == null)
+            {
+                return new ApiResponse<CarVO_CarDetail>(
+                    status: 404,
+                    message: "Car not found",
+                    data: null);
+            }
+
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 200,
+                message: "Car details retrieved successfully",
+                data: carDetail);
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 500,
+                message: $"Error retrieving car details: {ex.Message}",
+                data: null);
         }
     }
 

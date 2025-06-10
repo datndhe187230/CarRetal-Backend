@@ -7,6 +7,12 @@ Accept: application/json
 GET http://localhost:5227/api/Car/test-connection
 Accept: application/json
 
+
+###
+GET http://localhost:5227/api/Car/test-upload
+Accept: application/json
+
+
 ###
 GET http://localhost:5227/api/Car/All
 Accept: application/json
@@ -22,7 +28,7 @@ Accept: application/json
 }
 
 ###
-GET http://localhost:5227/api/User/profile/3E90353C-1C5D-469E-A572-0579A1C0468D
+GET http://localhost:5227/api/User/profile/C807356F-26D3-4F2C-933E-0A351EC1BF33
 Accept: application/json
 ###
 PUT http://localhost:5227/api/User/profile/3E90353C-1C5D-469E-A572-0579A1C0468D
@@ -86,6 +92,10 @@ Content-Type: application/json
   "phoneNumber": "0987654321",
   "roleId": 2
 }
+
+###
+GET http://localhost:5227/api/Car/9C5B209C-AD2D-421D-9F01-2609B5C1AE12/detail
+Accept: application/json
 ### Get all bookings (paging)
 GET http://localhost:5227/api/Booking?page=1&pageSize=5
 Accept: application/json
