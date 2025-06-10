@@ -51,6 +51,9 @@ if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
 
+//vnpay
+builder.Services.Configure<VnPayConfig>(builder.Configuration.GetSection("VnPay"));
+
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(

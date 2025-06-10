@@ -96,3 +96,6 @@ Content-Type: application/json
 ###
 GET http://localhost:5227/api/Car/9C5B209C-AD2D-421D-9F01-2609B5C1AE12/detail
 Accept: application/json
+
+  ###
+ Get http://localhost:5227/api/vnpay/createpayment
