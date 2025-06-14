@@ -1,8 +1,10 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,15 +14,13 @@ public class CarController : ControllerBase
 {
     private readonly CarRentalContext _context;
     private readonly ICarService _carService;
-    private readonly ICloudinaryService _cloudinaryService;
 
     //Dependency Injection
-    public CarController(CarRentalContext context, ICarService carService, ICloudinaryService cloudinaryService)
+    public CarController(CarRentalContext context, ICarService carService)
     {
 
         _context = context;
         _carService = carService;
-        _cloudinaryService = cloudinaryService;
     }
 
 
@@ -66,30 +66,6 @@ public class CarController : ControllerBase
         }
     }
 
-    [HttpGet("test-upload")]
-    public async Task<IActionResult> TestUploadConnection()
-    {
-        try
-        {
-            var result = await _cloudinaryService.TestUpload();
-            var response = new ApiResponse<string>(
-                status: 200,
-                message: "Upload test successful",
-                data: result
-            );
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ApiResponse<string>(
-                status: 500,
-                message: "Upload test failed",
-                data: $"Error: {ex.Message}"
-            );
-            return StatusCode(500, errorResponse);
-        }
-    }
-
     //Hung
     [HttpGet("{accountId}/paginated")]
     public async Task<ApiResponse<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
@@ -111,9 +87,6 @@ public class CarController : ControllerBase
                 message: "Connection successful",
                 data: result
                 );
-
-
-
             return response;
         }
         catch (Exception ex)
@@ -154,6 +127,16 @@ public class CarController : ControllerBase
                 message: $"Error retrieving car details: {ex.Message}",
                 data: null);
         }
+    }
+
+    [HttpGet("search")]
+    public async Task<ApiResponse<SearchDTO>> SearchCar([FromQuery] SearchDTO searchDTO)
+    {
+       return new ApiResponse<SearchDTO>(
+            status: 200,
+            message: "Search functionality is not implemented yet",
+            data: searchDTO
+        );
     }
 
 }
