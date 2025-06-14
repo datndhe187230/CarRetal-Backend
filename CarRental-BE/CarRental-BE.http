@@ -7,6 +7,9 @@ Accept: application/json
 GET http://localhost:5227/api/Car/test-connection
 Accept: application/json
 
+###
+GET http://localhost:5227/api/Car/search
+Accept: application/json
 
 ###
 GET http://localhost:5227/api/Car/test-upload
@@ -16,6 +19,12 @@ Accept: application/json
 ###
 GET http://localhost:5227/api/Car/All
 Accept: application/json
+
+
+###
+GET http://localhost:5227/api/Car/Search
+Accept: application/json
+
 
 ###
 POST http://localhost:5227/api/Auth/login

@@ -1,6 +1,6 @@
 ﻿namespace CarRental_BE.Models.VO.Car
 {
-    public class CarVO_ViewACar
+    public record CarVO_ViewACar
 
     {
         /*

@@ -1,4 +1,5 @@
 ﻿using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO.Car;
 
 namespace CarRental_BE.Services
@@ -7,7 +8,7 @@ namespace CarRental_BE.Services
     {
         Task<PaginationResponse<CarVO_ViewACar>> GetCarsByUserId(Guid accountId, PaginationRequest request);
         Task<CarVO_CarDetail> GetCarDetailById(Guid carId);
-
+        Task<PaginationResponse<CarSearchVO>> SearchCar(SearchDTO searchDTO, PaginationRequest requestPage);
     }
 
 }
