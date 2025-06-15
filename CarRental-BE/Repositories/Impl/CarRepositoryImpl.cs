@@ -53,44 +53,93 @@ namespace CarRental_BE.Repositories.Impl
                 District = dto.District,
                 CityProvince = dto.CityProvince,
 
-                Status = "Available",
+                Status = "not_verified",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 AccountId = accountId
     };
 
-            // Upload Images
-            if (dto.FrontImage != null)
-                car.CarImageFront = await _cloudinaryService.UploadImageAsync(dto.FrontImage, "CarImages");
-            if (dto.BackImage != null)
-                car.CarImageBack = await _cloudinaryService.UploadImageAsync(dto.BackImage, "CarImages");
-            if (dto.LeftImage != null)
-                car.CarImageLeft = await _cloudinaryService.UploadImageAsync(dto.LeftImage, "CarImages");
-            if (dto.RightImage != null)
-                car.CarImageRight = await _cloudinaryService.UploadImageAsync(dto.RightImage, "CarImages");
+            var uploadedImagePublicIds = new List<string>();
 
-            // Upload Documents
-            if (dto.RegistrationPaper != null)
+            try
             {
-                car.RegistrationPaperUri = await _cloudinaryService.UploadImageAsync(dto.RegistrationPaper, "Documents");
-                car.RegistrationPaperUriIsVerified = false;
-            }
-            if (dto.CertificateOfInspection != null)
-            {
-                car.CertificateOfInspectionUri = await _cloudinaryService.UploadImageAsync(dto.CertificateOfInspection, "Documents");
-                car.CertificateOfInspectionUriIsVerified = false;
-            }
-            if (dto.Insurance != null)
-            {
-                car.InsuranceUri = await _cloudinaryService.UploadImageAsync(dto.Insurance, "Documents");
-                car.InsuranceUriIsVerified = false;
-            }
+                // Upload Images
+                if (dto.FrontImage != null)
+                {
+                    var frontUrl = await _cloudinaryService.UploadImageAsync(dto.FrontImage, "CarRental/CarImages");
+                    car.CarImageFront = frontUrl;
+                    uploadedImagePublicIds.Add(GetPublicIdFromUrl(frontUrl));
+                }
 
-            // Save to DB
-            _context.Cars.Add(car);
-            await _context.SaveChangesAsync();
+                if (dto.BackImage != null)
+                {
+                    var backUrl = await _cloudinaryService.UploadImageAsync(dto.BackImage, "CarRental/CarImages");
+                    car.CarImageBack = backUrl;
+                    uploadedImagePublicIds.Add(GetPublicIdFromUrl(backUrl));
+                }
 
-            return car;
+                if (dto.LeftImage != null)
+                {
+                    var leftUrl = await _cloudinaryService.UploadImageAsync(dto.LeftImage, "CarRental/CarImages");
+                    car.CarImageLeft = leftUrl;
+                    uploadedImagePublicIds.Add(GetPublicIdFromUrl(leftUrl));
+                }
+
+                if (dto.RightImage != null)
+                {
+                    var rightUrl = await _cloudinaryService.UploadImageAsync(dto.RightImage, "CarRental/CarImages");
+                    car.CarImageRight = rightUrl;
+                    uploadedImagePublicIds.Add(GetPublicIdFromUrl(rightUrl));
+                }
+
+                // Documents
+                if (dto.RegistrationPaper != null)
+                {
+                    var docUrl = await _cloudinaryService.UploadImageAsync(dto.RegistrationPaper, "CarRental/Documents");
+                    car.RegistrationPaperUri = docUrl;
+                    car.RegistrationPaperUriIsVerified = false;
+                    uploadedImagePublicIds.Add(GetPublicIdFromUrl(docUrl));
+                }
+
+                if (dto.CertificateOfInspection != null)
+                {
+                    var certUrl = await _cloudinaryService.UploadImageAsync(dto.CertificateOfInspection, "CarRental/Documents");
+                    car.CertificateOfInspectionUri = certUrl;
+                    car.CertificateOfInspectionUriIsVerified = false;
+                    uploadedImagePublicIds.Add(GetPublicIdFromUrl(certUrl));
+                }
+
+                if (dto.Insurance != null)
+                {
+                    var insUrl = await _cloudinaryService.UploadImageAsync(dto.Insurance, "CarRental/Documents");
+                    car.InsuranceUri = insUrl;
+                    car.InsuranceUriIsVerified = false;
+                    uploadedImagePublicIds.Add(GetPublicIdFromUrl(insUrl));
+                }
+
+                // Save to DB
+                _context.Cars.Add(car);
+                await _context.SaveChangesAsync();
+
+                return car;
+            }
+            catch (Exception ex)
+            {
+                // Rollback Cloudinary uploads
+                foreach (var publicId in uploadedImagePublicIds)
+                {
+                    try
+                    {
+                        await _cloudinaryService.DeleteImageAsync(publicId);
+                    }
+                    catch (Exception deleteEx)
+                    {
+                        // Log deleteEx or ignore
+                    }
+                }
+
+                throw new Exception($"Failed to save car: {ex.Message}", ex);
+            }
         }
 
         public Task<(List<Car> cars, int totalCount)> GetAccountId(
@@ -141,6 +190,34 @@ namespace CarRental_BE.Repositories.Impl
                 terms.Add(dto.OtherText);
             return string.Join(",", terms);
         }
+
+        private string GetPublicIdFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return string.Empty;
+
+            try
+            {
+                var uri = new Uri(url);
+                var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+                // Find the index of the "upload" segment
+                var uploadIndex = Array.IndexOf(segments, "upload");
+                if (uploadIndex == -1 || uploadIndex + 2 >= segments.Length)
+                    return string.Empty;
+
+                // Everything after upload and version is the public ID (joined if in folders)
+                var publicIdSegments = segments.Skip(uploadIndex + 2).ToArray(); // skip "v123456789"
+                var publicIdWithExt = string.Join("/", publicIdSegments); // supports folders
+                var publicId = Path.ChangeExtension(publicIdWithExt, null); // remove file extension
+
+                return publicId;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
 
         public Task<(List<Car> cars, int totalCount)> SearchCar(SearchDTO searchDTO, int pageNumber, int pageSize)
         {

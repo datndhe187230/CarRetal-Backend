@@ -18,6 +18,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -141,6 +142,22 @@ builder.Services.AddAuthentication(options =>
                 }
 
                 return Task.CompletedTask;
+            },
+
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+
+                var result = JsonSerializer.Serialize(new
+                {
+                    code = 401,
+                    message = "Unauthorized. Token is missing, invalid, or expired."
+                });
+
+                return context.Response.WriteAsync(result);
             }
         };
     });
@@ -160,8 +177,21 @@ app.UseAuthorization();
 //booking
 
 
+app.Use(async (context, next) =>
+{
+    await next();
 
-
+    if (context.Response.StatusCode == 403)
+    {
+        context.Response.ContentType = "application/json";
+        var result = JsonSerializer.Serialize(new
+        {
+            code = 403,
+            message = "Forbidden: You do not have permission to access this resource."
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
