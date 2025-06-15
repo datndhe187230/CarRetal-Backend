@@ -8,6 +8,8 @@ using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
 using CarRental_BE.Services.Impl;
 using CloudinaryDotNet;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -40,6 +42,15 @@ builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
 builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
 builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
 
+//Configure Elasticsearch settings (local)
+var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
+    .CertificateFingerprint("d14784d90529b16a164b3e178eb770b02664afb1322a3225ca4145eef7d6c270")
+    .Authentication(new BasicAuthentication("elastic", "MRil5d*w9Q__xNGV+OFQ"))
+    .EnableDebugMode()
+    .PrettyJson()
+    .RequestTimeout(TimeSpan.FromMinutes(2));
+
+var client = new ElasticsearchClient(settings);
 
 //Configure Cloudinary settings
 var cloudName = builder.Configuration.GetValue<string>("CloudinarySettings:CloudName");
@@ -82,6 +93,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(configuration);
 });
 
+//Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
