@@ -70,6 +70,19 @@ public class CarServiceImpl : ICarService
         return carDetail;
     }
 
+    public async Task<PaginationResponse<CarSearchVO>> SearchCar(SearchDTO searchDTO, PaginationRequest requestPage)
+    {
+        var pageNumber = requestPage.PageNumber;
+        var pageSize = requestPage.PageSize;
+
+        var (cars, totalCount) = await _carRepository.SearchCar(searchDTO, pageNumber, pageSize);
+
+        var mapperCars = _mapper.Map<List<CarVO_ViewACar>>(cars);
+
+        var mappedCars = _mapper.Map<List<CarSearchVO>>(cars);
+
+        return new PaginationResponse<CarSearchVO>(mappedCars, totalCount, pageSize, pageNumber);
+    }
     public async Task<CarVO_CarDetail> AddCar(AddCarDTO addCarDTO)
     {
         var car = await _carRepository.AddCar(addCarDTO);

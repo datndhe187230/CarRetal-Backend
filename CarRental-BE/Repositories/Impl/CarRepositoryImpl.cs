@@ -4,6 +4,8 @@ using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -140,5 +142,18 @@ namespace CarRental_BE.Repositories.Impl
             return string.Join(",", terms);
         }
 
+        public Task<(List<Car> cars, int totalCount)> SearchCar(SearchDTO searchDTO, int pageNumber, int pageSize)
+        {
+            var query = _context.Cars.AsQueryable();
+            var totalCount = query.Count();
+
+            var cars = query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+
+            return Task.FromResult((cars: cars.Result, totalCount: totalCount));
+        }
     }
 }
