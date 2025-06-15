@@ -4,12 +4,14 @@ using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
+using Microsoft.AspNetCore.Authorization;
 using CloudinaryDotNet;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CarController : ControllerBase
 {
     private readonly CarRentalContext _context;
@@ -145,6 +147,34 @@ public class CarController : ControllerBase
             message: "Search functionality is not implemented yet",
             data: list
         );
+    }
+
+    [HttpPost("add")]
+    [Authorize(Roles = "admin, car_owner")]
+    public async Task<ApiResponse<CarVO_CarDetail>> AddCar([FromForm] AddCarDTO addCarDTO)
+    {
+        try
+        {
+            var newCar = await _carService.AddCar(addCarDTO);
+            if (newCar == null)
+            {
+                return new ApiResponse<CarVO_CarDetail>(
+                    status: 400,
+                    message: "Failed to add car",
+                    data: null);
+            }
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 201,
+                message: "Car added successfully",
+                data: newCar);
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 500,
+                message: $"Error adding car: {ex.Message}",
+                data: null);
+        }
     }
 
 }

@@ -83,4 +83,17 @@ public class CarServiceImpl : ICarService
 
         return new PaginationResponse<CarSearchVO>(mappedCars, totalCount, pageSize, pageNumber);
     }
+    public async Task<CarVO_CarDetail> AddCar(AddCarDTO addCarDTO)
+    {
+        var car = await _carRepository.AddCar(addCarDTO);
+
+        if (car == null)
+        {
+            throw new InvalidOperationException("Failed to add car.");
+        }
+
+        var carDetail = _mapper.Map<CarVO_CarDetail>(car);
+
+        return carDetail;
+    }
 }
