@@ -89,16 +89,14 @@ Content-Type: application/json
 }
 
 
-###
-PUT http://localhost:5227/api/Car/edit-car/3E90353C-1C5D-469E-A572-0579A1C0468D
+### lay status trên server
+PUT http://localhost:5227/api/Car/edit-car/9C5B209C-AD2D-421D-9F01-2609B5C1AE12
 Content-Type: application/json
 Accept: application/json
 
 {
-  "model": "Toyota Vios",
-  "licensePlate": "30A-123.45"
-}
-
+    "FuelConsumption": 6,
+    "Status": "verified"
 }
 
 ###

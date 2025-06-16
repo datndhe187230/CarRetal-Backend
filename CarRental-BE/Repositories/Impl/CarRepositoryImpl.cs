@@ -41,11 +41,10 @@ namespace CarRental_BE.Repositories.Impl
 
         public Task<Car?> GetCarById(Guid carId)
         {
-            var car = _context.Cars
-                .Include(c => c.Account)
+            return _context.Cars
                 .FirstOrDefaultAsync(c => c.Id == carId);
-            return car;
         }
+
 
         public Task<Car?> UpdateCar(Car car)
         {

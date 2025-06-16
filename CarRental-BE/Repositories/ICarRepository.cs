@@ -11,8 +11,6 @@ namespace CarRental_BE.Repositories
 
         Task<Car?> GetByIdWithBookings(Guid carId);
 
-
-
         Task<Car?> GetCarById(Guid carId);
 
         Task<Car?> UpdateCar(Car car);

@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
@@ -103,24 +104,25 @@ public class CarController : ControllerBase
         }
     }
 
-    [HttpGet("edit-car/{carId}")]
-    public async Task<ApiResponse<object>> UpdateCar(Guid carId)
+    [HttpPut("edit-car/{carId}")]
+    public async Task<ApiResponse<CarVO_Full>> UpdateCar(Guid carId, [FromBody] CarUpdateDTO updateDto)
     {
         try
         {
-            var car = await _carService.GetCarById(carId);
-            if (car == null)
+            var updatedCar = await _carService.UpdateCarEntity(carId, updateDto);
+            if (updatedCar == null)
             {
-                return new ApiResponse<object>(404, "Car not found", null);
+                return new ApiResponse<CarVO_Full>(404, "Car not found", null);
             }
-            return new ApiResponse<object>(200, "Update Success", car);
+
+            var result = await _carService.GetCarVOById(carId);
+
+            return new ApiResponse<CarVO_Full>(200, "Update Success", result);
         }
         catch (Exception ex)
         {
-            return new ApiResponse<object>(500, "Server error", ex.Message);
+            return new ApiResponse<CarVO_Full>(500, "Server error", null);
         }
-
-
     }
 
     [HttpGet("{carId}/detail")]

@@ -108,11 +108,7 @@
 
         public string Status { get; set; } = null!;
 
-        public Guid AccountId { get; set; }
-
-        public DateTime? CreatedAt { get; set; }
-
-        public DateTime? UpdatedAt { get; set; }
+        
 
 
     }

@@ -43,22 +43,6 @@ public class CarServiceImpl : ICarService
         
     }
 
-    public async Task<CarVO_Full?> UpdateCar(Guid carId, CarUpdateDTO updatedCar)
-    {
-        var car = await _carRepository.GetCarById(carId);
-        if (car == null)
-        {
-            return null;
-        }
-        _mapper.Map(updatedCar, car);
-        var updatedCarEntity = await _carRepository.UpdateCar(car);
-        if (updatedCarEntity == null)
-        {
-            return null;
-        }
-        return _mapper.Map<CarVO_Full>(updatedCarEntity);
-    }
-
     public async Task<CarVO_CarDetail> GetCarDetailById(Guid carId)
     {
         var car = await _carRepository.GetByIdWithBookings(carId);
@@ -96,4 +80,18 @@ public class CarServiceImpl : ICarService
         return carDetail;
     }
 
+    public async Task<Car?> UpdateCarEntity(Guid carId, CarUpdateDTO updatedCar)
+    {
+        var car = await _carRepository.GetCarById(carId);
+        if (car == null) return null;
+
+        _mapper.Map(updatedCar, car);
+        return await _carRepository.UpdateCar(car);
+    }
+
+    public async Task<CarVO_Full?> GetCarVOById(Guid carId)
+    {
+        var car = await _carRepository.GetCarById(carId);
+        return car == null ? null : _mapper.Map<CarVO_Full>(car);
+    }
 }
