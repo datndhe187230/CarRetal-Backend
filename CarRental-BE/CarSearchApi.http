@@ -1,0 +1,101 @@
+﻿# CarSearchTests.http
+# Tests for GET /api/Car/search endpoint
+# Ensure the API is running at http://localhost:5227 and the database is seeded with test data
+
+@baseUrl = http://localhost:5227/api/Car/search
+@pageNumber = 1
+@pageSize = 10
+
+###
+# Test 1: Search in Hanoi, Hoan Kiem, Trang Tien with overlapping booking (should return no cars)
+GET {{baseUrl}}?locationProvince=Hanoi&locationDistrict=Hoan%20Kiem&locationWard=Trang%20Tien&pickupTime=2025-06-21T09:00:00&dropoffTime=2025-06-22T17:00:00&pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+
+> {%
+    client.test("SearchCars_Hanoi_HoanKiem_TrangTien_OverlappingBooking_ReturnsNoCars", function() {
+        client.assert(response.status === 200, "Expected status code 200");
+        client.assert(response.body.cars.length === 0, "Expected no cars due to overlapping booking");
+        client.assert(response.body.totalCount === 0, "Expected totalCount to be 0");
+    });
+%}
+
+###
+# Test 2: Search in Hanoi, Ba Dinh, no ward, non-overlapping booking (should return Honda Civic)
+GET {{baseUrl}}?locationProvince=Hanoi&locationDistrict=Ba%20Dinh&pickupTime=2025-06-20T09:00:00&dropoffTime=2025-06-22T17:00:00&pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+
+> {%
+    client.test("SearchCars_Hanoi_BaDinh_NoWard_NonOverlappingBooking_ReturnsCar", function() {
+        client.assert(response.status === 200, "Expected status code 200");
+        client.assert(response.body.cars.length === 1, "Expected one car");
+        client.assert(response.body.cars[0].licensePlate === "29B-67890", "Expected Honda Civic with license plate 29B-67890");
+        client.assert(response.body.totalCount === 1, "Expected totalCount to be 1");
+    });
+%}
+
+###
+# Test 3: Search in Ho Chi Minh City, District 1, Ben Thanh, non-overlapping booking (should return Mazda CX-5)
+GET {{baseUrl}}?locationProvince=Ho%20Chi%20Minh%20City&locationDistrict=District%201&locationWard=Ben%20Thanh&pickupTime=2025-06-25T09:00:00&dropoffTime=2025-06-26T17:00:00&pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+
+> {%
+    client.test("SearchCars_HCMC_District1_BenThanh_NonOverlappingBooking_ReturnsCar", function() {
+        client.assert(response.status === 200, "Expected status code 200");
+        client.assert(response.body.cars.length === 1, "Expected one car");
+        client.assert(response.body.cars[0].licensePlate === "51A-98765", "Expected Mazda CX-5 with license plate 51A-98765");
+        client.assert(response.body.totalCount === 1, "Expected totalCount to be 1");
+    });
+%}
+
+###
+# Test 4: Search in Ho Chi Minh City, District 7, no ward, completed booking (should return Kia Seltos)
+GET {{baseUrl}}?locationProvince=Ho%20Chi%20Minh%20City&locationDistrict=District%207&pickupTime=2025-06-20T09:00:00&dropoffTime=2025-06-22T17:00:00&pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+
+> {%
+    client.test("SearchCars_HCMC_District7_NoWard_CompletedBooking_ReturnsCar", function() {
+        client.assert(response.status === 200, "Expected status code 200");
+        client.assert(response.body.cars.length === 1, "Expected one car");
+        client.assert(response.body.cars[0].licensePlate === "51B-11223", "Expected Kia Seltos with license plate 51B-11223");
+        client.assert(response.body.totalCount === 1, "Expected totalCount to be 1");
+    });
+%}
+
+###
+# Test 5: Search in Hanoi, no district, no ward (should return Honda Civic, no Toyota Camry due to booking)
+GET {{baseUrl}}?locationProvince=Hanoi&pickupTime=2025-06-21T09:00:00&dropoffTime=2025-06-22T17:00:00&pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+
+> {%
+    client.test("SearchCars_Hanoi_NoDistrictNoWard_OverlappingBooking_ReturnsOneCar", function() {
+        client.assert(response.status === 200, "Expected status code 200");
+        client.assert(response.body.cars.length === 1, "Expected one car");
+        client.assert(response.body.cars[0].licensePlate === "29B-67890", "Expected Honda Civic with license plate 29B-67890");
+        client.assert(response.body.totalCount === 1, "Expected totalCount to be 1");
+    });
+%}
+
+###
+# Test 6: Search with missing required locationProvince (should return 400 Bad Request)
+GET {{baseUrl}}?locationDistrict=Hoan%20Kiem&locationWard=Trang%20Tien&pickupTime=2025-06-21T09:00:00&dropoffTime=2025-06-22T17:00:00&pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+
+> {%
+    client.test("SearchCars_MissingLocationProvince_ReturnsBadRequest", function() {
+        client.assert(response.status === 400, "Expected status code 400 due to missing required locationProvince");
+    });
+%}
+
+###
+# Test 7: Search with no pickupTime or dropoffTime (should return all available cars in location)
+GET {{baseUrl}}?locationProvince=Hanoi&locationDistrict=Hoan%20Kiem&pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+
+> {%
+    client.test("SearchCars_Hanoi_HoanKiem_NoTimeFilters_ReturnsOneCar", function() {
+        client.assert(response.status === 200, "Expected status code 200");
+        client.assert(response.body.cars.length === 1, "Expected one car");
+        client.assert(response.body.cars[0].licensePlate === "29A-12345", "Expected Toyota Camry with license plate 29A-12345");
+        client.assert(response.body.totalCount === 1, "Expected totalCount to be 1");
+    });
+%}

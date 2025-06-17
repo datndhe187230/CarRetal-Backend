@@ -14,7 +14,6 @@
         }
     }
 
-
     public class PaginationMetadata
     {
         public int PageNumber { get; set; }
