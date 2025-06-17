@@ -13,8 +13,7 @@ namespace CarRental_BE.Models.DTO
         public DateTime? DropoffTime { get; init; }
 
         public int PriceRangeMin { get; set; } = 0; // Default to 0 if not provided
-        public int PriceRangeMax { get; set; } = 1000; // Default to 1000 if not provided
-        public decimal DailyPriceMax { get; set; } = 200m; // Default to 200 if not provided
+        public int PriceRangeMax { get; set; } = int.MaxValue; // Default to max if not provided
 
         public string[]? CarTypes { get; set; } // Optional, comma-separated
         public string[]? FuelTypes { get; set; } // Optional, comma-separated
@@ -23,9 +22,6 @@ namespace CarRental_BE.Models.DTO
         public string[]? Seats { get; set; } // Optional, comma-separated
 
         public string? SearchQuery { get; set; } // Optional
-
-
-
 
     }
 
