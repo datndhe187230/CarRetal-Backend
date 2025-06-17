@@ -37,6 +37,10 @@ namespace CarRental_BE.Repositories.Impl
                     .ThenInclude(b => b.Feedback)  // Add this line
                 .FirstOrDefaultAsync(c => c.Id == carId);
         }
+        public async Task<Car?> GetByIdAsync(Guid id)
+        {
+            return await _context.Cars.FirstOrDefaultAsync(c => c.Id == id);
+        }
 
     }
 }
