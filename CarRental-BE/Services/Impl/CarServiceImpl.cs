@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Repositories;
@@ -69,4 +70,29 @@ public class CarServiceImpl : ICarService
         return carDetail;
     }
 
+    public async Task<PaginationResponse<CarSearchVO>> SearchCar(SearchDTO searchDTO, PaginationRequest requestPage)
+    {
+        var pageNumber = requestPage.PageNumber;
+        var pageSize = requestPage.PageSize;
+
+        var (cars, totalCount) = await _carRepository.SearchCar(searchDTO, pageNumber, pageSize);
+
+        var mappedCars = _mapper.Map<List<CarSearchVO>>(cars);
+
+        return new PaginationResponse<CarSearchVO>(mappedCars, pageNumber, pageSize, totalCount);
+    }
+
+    public async Task<CarVO_CarDetail> AddCar(AddCarDTO addCarDTO)
+    {
+        var car = await _carRepository.AddCar(addCarDTO);
+
+        if (car == null)
+        {
+            throw new InvalidOperationException("Failed to add car.");
+        }
+
+        var carDetail = _mapper.Map<CarVO_CarDetail>(car);
+
+        return carDetail;
+    }
 }

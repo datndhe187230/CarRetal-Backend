@@ -1,7 +1,10 @@
-﻿namespace CarRental_BE.Data
+﻿
+namespace CarRental_BE.Data
 {
     public class ApiResponse<T>
     {
+        private Exception data;
+
         public int Status { get; set; }
         public string Message { get; set; }
         public T? Data { get; set; }
