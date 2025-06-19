@@ -2,7 +2,7 @@
 
 namespace CarRental_BE.Models.VO.Car
 {
-    public class CarVO_Full
+    public record CarVO_Full
     {
         public Guid Id { get; set; }
 

@@ -19,10 +19,31 @@ namespace CarRental_BE.Services.Impl
             throw new NotImplementedException();
         }
 
-        public Task<string> UploadImageAsync(IFormFile file, string folderName)
+        public async Task<string> UploadImageAsync(IFormFile file, string folderName)
         {
-            throw new NotImplementedException();
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("Invalid file uploaded.", nameof(file));
+
+            await using var stream = file.OpenReadStream();
+
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                AssetFolder = folderName
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return uploadResult.SecureUrl.ToString();
+            }
+            else
+            {
+                throw new Exception($"Cloudinary upload failed: {uploadResult.Error?.Message}");
+            }
         }
+
 
         public async Task<string> TestUpload()
         {
