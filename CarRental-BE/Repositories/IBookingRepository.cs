@@ -1,4 +1,5 @@
-﻿using CarRental_BE.Models.Entities;
+﻿using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.Entities;
 
 public interface IBookingRepository
 {
@@ -8,5 +9,7 @@ public interface IBookingRepository
     Task<Booking> GetByBookingNumberAsync(string bookingNumber);
     Task UpdateAsync(Booking booking);
 
+    Task<Booking> GetBookingByBookingIdAsync(string id);
+    Task<Booking?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto);
 
 }

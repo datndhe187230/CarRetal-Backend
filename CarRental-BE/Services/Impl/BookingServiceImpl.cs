@@ -1,6 +1,8 @@
-﻿using CarRental_BE.Models.Entities;
+ CarRental_BE.Models.Entities;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Mapper;
 using CarRental_BE.Models.VO;
+using CarRental_BE.Models.VO.User;
 using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
@@ -86,6 +88,16 @@ public class BookingServiceImpl : IBookingService
         <p>Hello {owner.Email},</p>
         <p>The booking <strong>{booking.BookingNumber}</strong> has been cancelled by the customer.</p>
         <p>Please check your dashboard for more details.</p>";
+    public async Task<BookingDetailVO?> GetBookingByBookingIdAsync(string id)
+    {
+        var entity = await _bookingRepository.GetBookingByBookingIdAsync(id);
+        return entity != null ? BookingMapper.ToBookingDetailVO(entity) : null;
     }
 
+
+    public async Task<BookingDetailVO?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto)
+    {
+        var updatedBooking = await _bookingRepository.UpdateBookingAsync(bookingNumber, bookingDto);
+        return updatedBooking != null ? BookingMapper.ToBookingDetailVO(updatedBooking) : null;
+    }
 }

@@ -1,4 +1,6 @@
-﻿using CarRental_BE.Models.VO;
+﻿using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.VO;
+using CarRental_BE.Models.VO.User;
 
 public interface IBookingService
 {
@@ -7,4 +9,7 @@ public interface IBookingService
     Task<List<BookingVO>> GetAllBookingsAsync();
     Task<(bool Success, string Message)> CancelBookingAsync(string bookingNumber);
 
+    Task<List<BookingVO>> GetAllBookingsAsync(); // Thêm dòng này
+    Task<BookingDetailVO?> GetBookingByBookingIdAsync(string id);
+    Task<BookingDetailVO?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto);
 }

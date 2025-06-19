@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -50,6 +51,24 @@ namespace CarRental_BE.Controllers
                 return BadRequest(new ApiResponse<string>(400, result.Message));
 
             return Ok(new ApiResponse<string>(200, "Booking cancelled successfully"));
+        }
+
+        [HttpGet("detail/{bookingNumber}")]
+        public async Task<ActionResult<ApiResponse<BookingDetailVO>>> GetBookingById(string bookingNumber)
+        {
+            var data = await _bookingService.GetBookingByBookingIdAsync(bookingNumber);
+            if (data == null)
+                return NotFound(new ApiResponse<BookingVO>(404, "Booking detail not found", null));
+
+            return Ok(new ApiResponse<BookingDetailVO>(200, "Success", data));
+        }
+        [HttpPut("edit/{bookingNumber}")]
+        public async Task<ActionResult<ApiResponse<BookingDetailVO>>> UpdateBooking(
+    string bookingNumber,
+    [FromBody] BookingEditDTO bookingDto)
+        {
+            var updatedBooking = await _bookingService.UpdateBookingAsync(bookingNumber, bookingDto);
+            return Ok(new ApiResponse<BookingDetailVO>(200, "Success", updatedBooking));
         }
     }
 }
