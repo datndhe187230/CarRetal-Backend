@@ -1,5 +1,8 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Exceptions;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarRental_BE.Repositories.Impl
@@ -51,5 +54,46 @@ namespace CarRental_BE.Repositories.Impl
             return (items, totalCount);
         }
 
+        public async Task<Booking?> GetBookingByBookingIdAsync(string id)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Include(b => b.Account)
+                    .ThenInclude(a => a.UserProfile)
+                .FirstOrDefaultAsync(b => b.BookingNumber == id);
+        }
+
+        public async Task<Booking?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto)
+        {
+            var booking = await _context.Bookings
+                .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
+
+            if (booking == null)
+                 throw new BookingNotFoundException(bookingNumber);
+
+            // Check if booking status allows editing
+            if (booking.Status != BookingStatusEnum.PendingDeposit.ToString() &&
+                booking.Status != BookingStatusEnum.Confirmed.ToString())
+            {
+                throw new BookingEditException(booking.Status);
+            }
+
+            // Update only the allowed fields
+            booking.DriverFullName = bookingDto.DriverFullName ?? booking.DriverFullName;
+            booking.DriverDob = bookingDto.DriverDob ?? booking.DriverDob;
+            booking.DriverEmail = bookingDto.DriverEmail ?? booking.DriverEmail;
+            booking.DriverPhoneNumber = bookingDto.DriverPhoneNumber ?? booking.DriverPhoneNumber;
+            booking.DriverNationalId = bookingDto.DriverNationalId ?? booking.DriverNationalId;
+            booking.DriverHouseNumberStreet = bookingDto.DriverHouseNumberStreet ?? booking.DriverHouseNumberStreet;
+            booking.DriverWard = bookingDto.DriverWard ?? booking.DriverWard;
+            booking.DriverDistrict = bookingDto.DriverDistrict ?? booking.DriverDistrict;
+            booking.DriverCityProvince = bookingDto.DriverCityProvince ?? booking.DriverCityProvince;
+            booking.DriverDrivingLicenseUri = bookingDto.DriverDrivingLicenseUri ?? booking.DriverDrivingLicenseUri;
+
+            booking.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return booking;
+        }
     }
 }
