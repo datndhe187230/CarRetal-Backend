@@ -5,159 +5,125 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
+using VNPAY.NET;
+using VNPAY.NET.Enums;
+using VNPAY.NET.Models;
+using VNPAY.NET.Utilities;
 
 namespace CarRental_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class VnPayController : ControllerBase
+    public class VnpayController : ControllerBase
     {
-        private readonly VnPayConfig _config;
+        private readonly IVnpay _vnpay;
+        private readonly IConfiguration _configuration;
 
-        public VnPayController(IOptions<VnPayConfig> config)
+        public VnpayController(IVnpay vnPayservice, IConfiguration configuration)
         {
-            _config = config.Value;
+            _vnpay = vnPayservice;
+            _configuration = configuration;
+            var tmnCode = _configuration["Vnpay:TmnCode"];
+            var hashSecret = _configuration["Vnpay:HashSecret"];
+
+            // Debug: In ra console (chỉ sử dụng khi phát triển, không nên dùng trong production)
+            Console.WriteLine($"[DEBUG] Vnpay:TmnCode = {tmnCode}");
+            Console.WriteLine($"[DEBUG] Vnpay:HashSecret = {hashSecret}");
+            _vnpay.Initialize(_configuration["Vnpay:TmnCode"], _configuration["Vnpay:HashSecret"], _configuration["Vnpay:BaseUrl"], _configuration["Vnpay:CallbackUrl"]);
         }
 
-        [HttpGet("createpayment")]
-        public IActionResult CreatePayment()
+        /// <summary>
+        /// Tạo url thanh toán
+        /// </summary>
+        /// <param name="money">Số tiền phải thanh toán</param>
+        /// <param name="description">Mô tả giao dịch</param>
+        /// <returns></returns>
+        [HttpGet("CreatePaymentUrl")]
+        public ActionResult<string> CreatePaymentUrl(double money, string description)
         {
             try
             {
-                string amount = "100000"; // VND
-                string txnRef = DateTime.Now.Ticks.ToString();
-                string orderInfo = "Thanh toan don hang test";
-                string vnp_Version = "2.1.0";
-                string vnp_Command = "pay";
-                string vnp_OrderType = "other";
-                string locale = "vn";
-                string currCode = "VND";
+                var ipAddress = NetworkHelper.GetIpAddress(HttpContext); // Lấy địa chỉ IP của thiết bị thực hiện giao dịch
 
-                var vnp_Params = new SortedDictionary<string, string>
-        {
-            { "vnp_Version", vnp_Version },
-            { "vnp_Command", vnp_Command },
-            { "vnp_TmnCode", _config.TmnCode },
-            { "vnp_Amount", (int.Parse(amount) * 100).ToString() }, // Chuyển sang đơn vị nhỏ nhất (cent)
-            { "vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss") },
-            { "vnp_CurrCode", currCode },
-            { "vnp_IpAddr", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1" },
-            { "vnp_Locale", locale },
-            { "vnp_OrderInfo", orderInfo },
-            { "vnp_OrderType", vnp_OrderType },
-            { "vnp_ReturnUrl", _config.ReturnUrl },
-            { "vnp_TxnRef", txnRef }
-            // Loại bỏ vnp_SecureHashType khỏi signData
-        };
-
-                // Tạo chuỗi signData (không mã hóa URL)
-                string signData = string.Join("&", vnp_Params.Select(kv => $"{kv.Key}={kv.Value}"));
-                Console.WriteLine("signData: " + signData); // Debug
-
-                // Tạo chữ ký bảo mật
-                string secureHash = CreateHmacSha256(_config.HashSecret, signData);
-                Console.WriteLine("secureHash: " + secureHash); // Debug
-
-                // Tạo chuỗi queryString (có mã hóa URL)
-                string queryString = string.Join("&", vnp_Params.Select(kv => $"{kv.Key}={WebUtility.UrlEncode(kv.Value)}"));
-                queryString += $"&vnp_SecureHash={secureHash}";
-
-                string paymentUrl = $"{_config.Url}?{queryString}";
-
-                return Ok(new
+                var request = new PaymentRequest
                 {
-                    code = "00",
-                    url = paymentUrl,
-                    message = "Tạo URL thanh toán thành công"
-                });
+                    PaymentId = DateTime.Now.Ticks,
+                    Money = money,
+                    Description = description,
+                    IpAddress = ipAddress,
+                    BankCode = BankCode.ANY, // Tùy chọn. Mặc định là tất cả phương thức giao dịch
+                    CreatedDate = DateTime.Now, // Tùy chọn. Mặc định là thời điểm hiện tại
+                    Currency = Currency.VND, // Tùy chọn. Mặc định là VND (Việt Nam đồng)
+                    Language = DisplayLanguage.Vietnamese // Tùy chọn. Mặc định là tiếng Việt
+                };
+
+                var paymentUrl = _vnpay.GetPaymentUrl(request);
+
+                return Created(paymentUrl, paymentUrl);
             }
             catch (Exception ex)
             {
-                return BadRequest(new
-                {
-                    code = "99",
-                    url = "",
-                    message = $"Lỗi: {ex.Message}"
-                });
+                return BadRequest(ex.Message);
             }
         }
-        [HttpGet("return")]
-        public IActionResult Return()
+
+        /// <summary>
+        /// Thực hiện hành động sau khi thanh toán. URL này cần được khai báo với VNPAY để API này hoạt đồng (ví dụ: http://localhost:1234/api/Vnpay/IpnAction)
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("IpnAction")]
+        public IActionResult IpnAction()
         {
-            try
+            if (Request.QueryString.HasValue)
             {
-                // Lấy các tham số trả về từ VNPay
-                var queryString = Request.QueryString.Value;
-                if (string.IsNullOrEmpty(queryString))
+                try
                 {
-                    return BadRequest("Không nhận được dữ liệu từ VNPay.");
-                }
-
-                var response = HttpUtility.ParseQueryString(queryString);
-                var vnp_Params = new SortedDictionary<string, string>();
-                foreach (string key in response.AllKeys)
-                {
-                    if (!string.IsNullOrEmpty(key))
+                    var paymentResult = _vnpay.GetPaymentResult(Request.Query);
+                    if (paymentResult.IsSuccess)
                     {
-                        vnp_Params.Add(key, response[key]);
+                        // Thực hiện hành động nếu thanh toán thành công tại đây. Ví dụ: Cập nhật trạng thái đơn hàng trong cơ sở dữ liệu.
+                        return Ok();
                     }
+
+                    // Thực hiện hành động nếu thanh toán thất bại tại đây. Ví dụ: Hủy đơn hàng.
+                    return BadRequest("Thanh toán thất bại");
                 }
-
-                // Lấy các tham số cần thiết
-                string vnp_SecureHash = vnp_Params["vnp_SecureHash"];
-                vnp_Params.Remove("vnp_SecureHash"); // Loại bỏ vnp_SecureHash khỏi danh sách để tính lại chữ ký
-                string signData = string.Join("&", vnp_Params.Select(kv => $"{kv.Key}={kv.Value}"));
-
-                // Tính lại chữ ký để xác thực
-                string secureHash = CreateHmacSha256(_config.HashSecret, signData);
-
-                if (secureHash.Equals(vnp_SecureHash, StringComparison.OrdinalIgnoreCase))
+                catch (Exception ex)
                 {
-                    // Chữ ký hợp lệ, xử lý kết quả giao dịch
-                    string vnp_ResponseCode = vnp_Params["vnp_ResponseCode"];
-                    string vnp_TxnRef = vnp_Params["vnp_TxnRef"];
-                    string vnp_Amount = vnp_Params["vnp_Amount"];
-                    string vnp_TransactionStatus = vnp_Params["vnp_TransactionStatus"];
-
-                    if (vnp_ResponseCode == "00" && vnp_TransactionStatus == "00")
-                    {
-                        // Giao dịch thành công
-                        return Ok(new
-                        {
-                            code = "00",
-                            message = "Thanh toán thành công",
-                            transactionId = vnp_TxnRef,
-                            amount = vnp_Amount
-                        });
-                    }
-                    else
-                    {
-                        // Giao dịch thất bại
-                        return Ok(new
-                        {
-                            code = "99",
-                            message = "Thanh toán thất bại",
-                            responseCode = vnp_ResponseCode,
-                            transactionId = vnp_TxnRef
-                        });
-                    }
-                }
-                else
-                {
-                    // Chữ ký không hợp lệ
-                    return BadRequest("Chữ ký không hợp lệ.");
+                    return BadRequest(ex.Message);
                 }
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { code = "99", message = $"Lỗi hệ thống: {ex.Message}" });
-            }
+
+            return NotFound("Không tìm thấy thông tin thanh toán.");
         }
-        private string CreateHmacSha256(string key, string inputData)
+
+        /// <summary>
+        /// Trả kết quả thanh toán về cho người dùng
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("Callback")]
+        public ActionResult<PaymentResult> Callback()
         {
-            var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(key));
-            byte[] hashValue = hmac.ComputeHash(Encoding.UTF8.GetBytes(inputData));
-            return BitConverter.ToString(hashValue).Replace("-", "").ToLower();
+            if (Request.QueryString.HasValue)
+            {
+                try
+                {
+                    var paymentResult = _vnpay.GetPaymentResult(Request.Query);
+
+                    if (paymentResult.IsSuccess)
+                    {
+                        return Ok(paymentResult);
+                    }
+
+                    return BadRequest(paymentResult);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+            }
+
+            return NotFound("Không tìm thấy thông tin thanh toán.");
         }
     }
 }

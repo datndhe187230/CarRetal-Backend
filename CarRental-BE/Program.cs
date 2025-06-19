@@ -16,7 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using System.Text;
-
+ 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -37,6 +37,8 @@ builder.Services.AddScoped<ICarService, CarServiceImpl>();
 builder.Services.AddScoped<IEmailService, EmailServiceImpl>();
 builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
+builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
+builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
 
 
 //Configure Cloudinary settings
@@ -51,9 +53,8 @@ if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
 
-//vnpay
-builder.Services.Configure<VnPayConfig>(builder.Configuration.GetSection("VnPay"));
-
+// Add VNPAY service to the container.
+builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(
@@ -146,6 +147,10 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+//booking
+
+
+
 
 
 // Configure the HTTP request pipeline.
@@ -154,6 +159,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+//booking
 
 
 

@@ -96,6 +96,35 @@ Content-Type: application/json
 ###
 GET http://localhost:5227/api/Car/9C5B209C-AD2D-421D-9F01-2609B5C1AE12/detail
 Accept: application/json
+### Get all bookings (paging)
+GET http://localhost:5227/api/Booking?page=1&pageSize=5
+Accept: application/json
+
+### Get bookings by booking number
+GET http://localhost:5227/api/Booking/detail/BOOK001
+Accept: application/json
+
+ ### Edit bookings by booking number
+PUT http://localhost:5227/api/Booking/edit/BOOK001
+Accept: application/json
+Content-Type: application/json
+
+{
+    "driverFullName": "Nguyen Van A Updateaad22",
+    "driverDob": "1990-01-01",
+    "driverEmail": "updated.email@example.com",
+    "driverPhoneNumber": "0987654321",
+    "driverNationalId": "123456789012",
+    "driverHouseNumberStreet": "123 Updated Street",
+    "driverWard": "Updated Ward",
+    "driverDistrict": "Updated District",
+    "driverCityProvince": "Updated City",
+    "driverDrivingLicenseUri":"abc"
+}
+
 
   ###
- Get http://localhost:5227/api/vnpay/createpayment
+GET http://localhost:5227/api/vnpay/CreatePaymentUrl?money=5000&description=Test+Payment
+
+  ###
+GET http://localhost:5227/api/vnpay/Callback
