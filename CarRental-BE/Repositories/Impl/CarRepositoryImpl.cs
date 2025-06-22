@@ -219,18 +219,82 @@ namespace CarRental_BE.Repositories.Impl
         }
 
 
-        public Task<(List<Car> cars, int totalCount)> SearchCar(SearchDTO searchDTO, int pageNumber, int pageSize)
+        public async Task<(List<Car> cars, int totalCount)> SearchCar(SearchDTO searchDTO, int pageNumber, int pageSize)
         {
             var query = _context.Cars.AsQueryable();
-            var totalCount = query.Count();
 
-            var cars = query
+            // Apply location filters
+            query = query.Where(c => c.CityProvince == searchDTO.LocationProvince
+                                  && (string.IsNullOrEmpty(searchDTO.LocationDistrict) || c.District == searchDTO.LocationDistrict)
+                                  && (string.IsNullOrEmpty(searchDTO.LocationWard) || c.Ward == searchDTO.LocationWard)
+                                  && c.Status == "verified");
+
+            // Filter out cars with conflicting bookings
+            if (searchDTO.PickupTime.HasValue && searchDTO.DropoffTime.HasValue)
+            {
+                query = query.Where(c => !_context.Bookings.Any(b => b.CarId == c.Id
+                                                                && b.Status != "completed" && b.Status != "cancelled"
+                                                                && (searchDTO.PickupTime >= b.PickUpTime && searchDTO.PickupTime <= b.DropOffTime
+                                                                    || searchDTO.DropoffTime >= b.PickUpTime && searchDTO.DropoffTime <= b.DropOffTime
+                                                                    || b.PickUpTime >= searchDTO.PickupTime && b.PickUpTime <= searchDTO.DropoffTime)));
+            }
+
+            // Apply price range filter
+            query = query.Where(c => c.BasePrice >= searchDTO.PriceRangeMin && c.BasePrice <= searchDTO.PriceRangeMax);
+
+            // Apply car type filter (assuming CarTypes is related to some categorization in Car entity)
+            if (searchDTO.CarTypes != null && searchDTO.CarTypes.Any())
+            {
+                // Note: You might need to adjust this based on how car types are stored in your Car entity
+                query = query.Where(c => searchDTO.CarTypes.Contains(c.Model) || searchDTO.CarTypes.Contains(c.Brand));
+            }
+
+            // Apply fuel type filter
+            if (searchDTO.FuelTypes != null && searchDTO.FuelTypes.Any())
+            {
+                bool[] fuelBools = searchDTO.FuelTypes.Select(f => f.ToLower() == "gasoline").ToArray();
+                query = query.Where(c => fuelBools.Contains(c.IsGasoline ?? false));
+            }
+
+            // Apply transmission type filter
+            if (searchDTO.TransmissionTypes != null && searchDTO.TransmissionTypes.Any())
+            {
+                bool[] transmissionBools = searchDTO.TransmissionTypes.Select(t => t.ToLower() == "automatic").ToArray();
+                query = query.Where(c => transmissionBools.Contains(c.IsAutomatic ?? false));
+            }
+
+            // Apply brand filter
+            if (searchDTO.Brands != null && searchDTO.Brands.Any())
+            {
+                query = query.Where(c => searchDTO.Brands.Contains(c.Brand));
+            }
+
+            // Apply seats filter
+            if (searchDTO.Seats != null && searchDTO.Seats.Any())
+            {
+                int[] seatCounts = searchDTO.Seats.Select(s => int.TryParse(s, out int n) ? n : 0).ToArray();
+                query = query.Where(c => c.NumberOfSeats.HasValue && seatCounts.Contains(c.NumberOfSeats.Value));
+            }
+
+            // Apply search query filter (searching in brand, model, or description)
+            if (!string.IsNullOrEmpty(searchDTO.SearchQuery))
+            {
+                string searchLower = searchDTO.SearchQuery.ToLower();
+                query = query.Where(c => (c.Brand != null && c.Brand.ToLower().Contains(searchLower))
+                                      || (c.Model != null && c.Model.ToLower().Contains(searchLower))
+                                      || (c.Description != null && c.Description.ToLower().Contains(searchLower)));
+            }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination
+            var cars = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-
-            return Task.FromResult((cars: cars.Result, totalCount: totalCount));
+            return (cars: cars, totalCount: totalCount);
         }
     }
 }

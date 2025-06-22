@@ -79,12 +79,11 @@ public class CarServiceImpl : ICarService
 
         var (cars, totalCount) = await _carRepository.SearchCar(searchDTO, pageNumber, pageSize);
 
-        var mapperCars = _mapper.Map<List<CarVO_ViewACar>>(cars);
-
         var mappedCars = _mapper.Map<List<CarSearchVO>>(cars);
 
-        return new PaginationResponse<CarSearchVO>(mappedCars, totalCount, pageSize, pageNumber);
+        return new PaginationResponse<CarSearchVO>(mappedCars, pageNumber, pageSize, totalCount);
     }
+
     public async Task<CarVO_CarDetail> AddCar(AddCarDTO addCarDTO)
     {
         var car = await _carRepository.AddCar(addCarDTO);

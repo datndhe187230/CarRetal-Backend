@@ -4,7 +4,7 @@
     public class PaginationResponse<T>
     {
         public List<T> Data { get; set; } = new List<T>();
-        public PaginationMetadata Pagination;
+        public PaginationMetadata Pagination { get; set; }
 
         // Constructor to initialize the pagination response with data and pagination details
         public PaginationResponse(List<T> data, int pageNumber, int pageSize, int totalRecords)
@@ -13,7 +13,6 @@
             Pagination = new PaginationMetadata(pageNumber, pageSize, totalRecords);
         }
     }
-
 
     public class PaginationMetadata
     {

@@ -131,8 +131,9 @@ public class CarController : ControllerBase
         }
     }
 
+    [AllowAnonymous]
     [HttpGet("search")]
-    public async Task<ApiResponse<PaginationResponse<CarSearchVO>>> SearchCar([FromQuery] SearchDTO searchDTO, [FromQuery] int page=1, [FromQuery] int pageSize=10)
+    public async Task<ApiResponse<PaginationResponse<CarSearchVO>>> SearchCar([FromQuery] SearchDTO searchDTO, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var requestPage = new PaginationRequest
         {
@@ -140,13 +141,15 @@ public class CarController : ControllerBase
             PageSize = pageSize
         };
 
+        PaginationResponse<CarSearchVO> list = await _carService.SearchCar(searchDTO, requestPage);
 
-        var  list = await _carService.SearchCar(searchDTO, requestPage);
-        return new ApiResponse<PaginationResponse<CarSearchVO>>(
+        var response = new ApiResponse<PaginationResponse<CarSearchVO>>(
             status: 200,
             message: "Search functionality is not implemented yet",
             data: list
         );
+
+        return response;
     }
 
     [HttpPost("add")]
