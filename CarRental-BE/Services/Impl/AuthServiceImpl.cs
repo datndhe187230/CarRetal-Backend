@@ -1,8 +1,8 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Exceptions;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -40,11 +40,12 @@ namespace CarRental_BE.Services.Impl
 
             if (userAccount == null)
             {
-                throw new InvalidOperationException("User not found.");
+                throw new UserNotFoundException(loginDto.Email);
             }
-            else if (!string.Equals(loginDto.Password, userAccount.Password))
+            //else if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, userAccount.Password))
+            else if (!String.Equals(loginDto.Password, userAccount.Password, StringComparison.Ordinal))
             {
-                throw new UnauthorizedAccessException("Invalid password.");
+                throw new UnauthorizedException("Invalid password.");
             }
 
             var fullName = await _userRepository.GetUserProfileFullNameByAccountId(userAccount.Id);
@@ -96,7 +97,7 @@ namespace CarRental_BE.Services.Impl
             var account = await _accountRepository.getAccountByEmailWithRole(forgotPasswordDto.Email);
             if (account == null)
             {
-                throw new InvalidOperationException("Account not found.");
+                throw new UserNotFoundException(forgotPasswordDto.Email);
             }
 
             // 1. Generate reset token
