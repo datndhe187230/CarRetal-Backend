@@ -118,6 +118,65 @@ public class BookingServiceImpl : IBookingService
 
         return (true, "Booking marked as in progress");
     }
+    public async Task<(bool Success, string Message)> ReturnCarAsync(string bookingNumber)
+    {
+        var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
+        if (booking == null)
+            return (false, "Booking not found");
+
+        if (booking.Status?.ToLower() != "in_progress")
+            return (false, "Only in-progress bookings can be returned");
+
+        var pickup = booking.PickUpTime ?? DateTime.UtcNow;
+        var dropoff = booking.DropOffTime ?? DateTime.UtcNow;
+        var days = (dropoff.Date - pickup.Date).Days + 1;
+        var totalAmount = (booking.BasePrice ?? 0) * days;
+        var deposit = booking.Deposit ?? 0;
+
+        var customer = await _accountRepository.GetByIdAsync(booking.AccountId!.Value);
+        if (customer?.Wallet == null)
+            return (false, "Customer wallet not found");
+
+        if (totalAmount > deposit)
+        {
+            var diff = totalAmount - deposit;
+            if (customer.Wallet.Balance < diff)
+            {
+                booking.Status = "pending_payment";
+                await _bookingRepository.UpdateAsync(booking);
+                return (false, "ME012: Your wallet doesn’t have enough balance. Please top-up your wallet and try again.");
+            }
+
+            customer.Wallet.Balance -= diff;
+            await _accountRepository.UpdateAsync(customer);
+        }
+        else if (deposit > totalAmount)
+        {
+            var refund = deposit - totalAmount;
+            customer.Wallet.Balance += refund;
+            await _accountRepository.UpdateAsync(customer);
+        }
+
+        booking.Status = "completed";
+        await _bookingRepository.UpdateAsync(booking);
+
+        var car = booking.Car ?? await _carRepository.GetByIdAsync(booking.CarId);
+        var owner = car != null ? await _accountRepository.GetByIdAsync(car.AccountId) : null;
+
+        if (owner != null)
+        {
+            string subject = "Car Returned";
+            string body = $@"
+        <h3>Car Returned</h3>
+        <p>Hello {owner.Email},</p>
+        <p>Booking <strong>{booking.BookingNumber}</strong> has been returned successfully by the customer.</p>
+        <p>Please check your dashboard for more details.</p>";
+            await _emailService.SendEmailAsync(owner.Email, subject, body);
+        }
+
+        return (true, "Return completed successfully");
+    }
+
 
 
 }

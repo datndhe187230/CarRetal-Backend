@@ -33,6 +33,8 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<Booking?> GetByBookingNumberAsync(string bookingNumber) => await _context.Bookings
                                  .Include(b => b.Car)
+                                 .Include(b => b.Account).ThenInclude(a => a.Wallet)
+
                                  .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
         public async Task<(List<Booking>, int)> GetBookingsWithPagingAsync(int page, int pageSize)
         {

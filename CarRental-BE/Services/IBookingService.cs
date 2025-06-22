@@ -13,4 +13,6 @@ public interface IBookingService
     Task<BookingDetailVO?> GetBookingByBookingIdAsync(string id);
     Task<BookingDetailVO?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto);
     Task<(bool Success, string Message)> ConfirmPickupAsync(string bookingNumber);
+    Task<(bool Success, string Message)> ReturnCarAsync(string bookingNumber);
+
 }

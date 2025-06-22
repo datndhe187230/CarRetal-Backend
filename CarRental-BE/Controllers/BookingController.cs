@@ -61,6 +61,14 @@ namespace CarRental_BE.Controllers
 
             return Ok(new ApiResponse<string>(200, "Pick-up successfully"));
         }
+        [HttpPut("{bookingNumber}/return")]
+        public async Task<IActionResult> ReturnCar(string bookingNumber)
+        {
+            var result = await _bookingService.ReturnCarAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Return processed successfully"));
+        }
 
 
         [HttpGet("detail/{bookingNumber}")]
