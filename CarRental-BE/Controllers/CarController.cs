@@ -156,28 +156,13 @@ public class CarController : ControllerBase
     [Authorize(Roles = "admin, car_owner")]
     public async Task<ApiResponse<CarVO_CarDetail>> AddCar([FromForm] AddCarDTO addCarDTO)
     {
-        try
-        {
             var newCar = await _carService.AddCar(addCarDTO);
-            if (newCar == null)
-            {
-                return new ApiResponse<CarVO_CarDetail>(
-                    status: 400,
-                    message: "Failed to add car",
-                    data: null);
-            }
+            
             return new ApiResponse<CarVO_CarDetail>(
                 status: 201,
                 message: "Car added successfully",
                 data: newCar);
-        }
-        catch (Exception ex)
-        {
-            return new ApiResponse<CarVO_CarDetail>(
-                status: 500,
-                message: $"Error adding car: {ex.Message}",
-                data: null);
-        }
+        
     }
 
 }

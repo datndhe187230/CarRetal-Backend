@@ -35,4 +35,16 @@
         {
         }
     }
+
+    public class InvalidOperationException : AppException
+    {
+        public InvalidOperationException(string message)
+            : base(message, 1002, 400) { }
+    }
+
+    public class UnauthorizedException : AppException
+    {
+        public UnauthorizedException(string message)
+            : base(message, 1005, 401) { }
+    }
 }
