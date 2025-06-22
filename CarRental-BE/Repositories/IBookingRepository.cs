@@ -12,4 +12,5 @@ public interface IBookingRepository
     Task<Booking> GetBookingByBookingIdAsync(string id);
     Task<Booking?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto);
 
+
 }

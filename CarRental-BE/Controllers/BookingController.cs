@@ -52,6 +52,16 @@ namespace CarRental_BE.Controllers
 
             return Ok(new ApiResponse<string>(200, "Booking cancelled successfully"));
         }
+        [HttpPut("{bookingNumber}/confirm-pickup")]
+        public async Task<IActionResult> ConfirmPickup(string bookingNumber)
+        {
+            var result = await _bookingService.ConfirmPickupAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+
+            return Ok(new ApiResponse<string>(200, "Pick-up successfully"));
+        }
+
 
         [HttpGet("detail/{bookingNumber}")]
         public async Task<ActionResult<ApiResponse<BookingDetailVO>>> GetBookingById(string bookingNumber)

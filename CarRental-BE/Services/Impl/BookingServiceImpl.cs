@@ -1,4 +1,6 @@
- CarRental_BE.Models.Entities;
+namespace CarRental_BE.Models.Entities;
+
+using CarRental_BE.Exceptions;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Mapper;
 using CarRental_BE.Models.VO;
@@ -74,7 +76,7 @@ public class BookingServiceImpl : IBookingService
             if (owner != null)
             {
                 string subject = "Booking Cancelled";
-                string body = GenerateCancelBookingEmailContent(booking, owner); // bạn có thể tạo template email riêng
+                string body = GenerateCancelBookingEmailContent(booking, owner); 
                 await _emailService.SendEmailAsync(owner.Email, subject, body);
             }
         }
@@ -88,6 +90,7 @@ public class BookingServiceImpl : IBookingService
         <p>Hello {owner.Email},</p>
         <p>The booking <strong>{booking.BookingNumber}</strong> has been cancelled by the customer.</p>
         <p>Please check your dashboard for more details.</p>";
+    }
     public async Task<BookingDetailVO?> GetBookingByBookingIdAsync(string id)
     {
         var entity = await _bookingRepository.GetBookingByBookingIdAsync(id);
@@ -100,4 +103,21 @@ public class BookingServiceImpl : IBookingService
         var updatedBooking = await _bookingRepository.UpdateBookingAsync(bookingNumber, bookingDto);
         return updatedBooking != null ? BookingMapper.ToBookingDetailVO(updatedBooking) : null;
     }
+
+    public async Task<(bool Success, string Message)> ConfirmPickupAsync(string bookingNumber)
+    {
+        var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
+        if (booking == null)
+            return (false, "Booking not found");
+
+        if (booking.Status?.ToLower() != "confirmed")
+            return (false, "Only confirmed bookings can be picked up");
+
+        booking.Status = "in_progress";
+        await _bookingRepository.UpdateAsync(booking);
+
+        return (true, "Booking marked as in progress");
+    }
+
+
 }
