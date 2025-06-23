@@ -1,4 +1,5 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Exceptions;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Services;
@@ -37,7 +38,7 @@ namespace CarRental_BE.Repositories.Impl
                 .Include(u => u.IdNavigation)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (user == null) return null;
+            if (user == null) throw new UserNotFound2Exception();
 
             // Update UserProfile fields
             user.FullName = dto.FullName;
@@ -56,7 +57,7 @@ namespace CarRental_BE.Repositories.Impl
                 // Check if new email already exists in database
                 if (await _context.Accounts.AnyAsync(a => a.Email == dto.Email && a.Id != id))
                 {
-                    throw new Exception("Email already exists");
+                    throw new EmailExistException();
                 }
 
                 user.IdNavigation.Email = dto.Email;

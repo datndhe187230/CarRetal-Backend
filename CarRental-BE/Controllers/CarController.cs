@@ -103,6 +103,7 @@ public class CarController : ControllerBase
     }
 
     [HttpGet("{carId}/detail")]
+    [AllowAnonymous]
     public async Task<ApiResponse<CarVO_CarDetail>> GetCarDetail(Guid carId)
     {
         try

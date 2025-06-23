@@ -72,8 +72,8 @@ namespace CarRental_BE.Repositories.Impl
                  throw new BookingNotFoundException(bookingNumber);
 
             // Check if booking status allows editing
-            if (booking.Status != BookingStatusEnum.PendingDeposit.ToString() &&
-                booking.Status != BookingStatusEnum.Confirmed.ToString())
+            if (!booking.Status.Equals(BookingStatusEnum.PendingDeposit.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                !booking.Status.Equals(BookingStatusEnum.Confirmed.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 throw new BookingEditException(booking.Status);
             }
