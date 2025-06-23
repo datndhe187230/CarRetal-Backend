@@ -6,6 +6,7 @@ using CarRental_BE.Services;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using InvalidOperationException = CarRental_BE.Exceptions.InvalidOperationException;
 
 namespace CarRental_BE.Repositories.Impl
 {
