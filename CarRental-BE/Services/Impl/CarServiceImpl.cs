@@ -5,6 +5,8 @@ using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Repositories;
 using CarRental_BE.Services;
+using InvalidOperationException = CarRental_BE.Exceptions.InvalidOperationException;
+
 
 public class CarServiceImpl : ICarService
 {

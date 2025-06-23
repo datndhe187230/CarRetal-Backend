@@ -14,9 +14,17 @@ namespace CarRental_BE.Services.Impl
             _cloudinary = cloudinary;
         }
 
-        public Task<string> DeleteImageAsync(string publicId)
+        public async Task<string> DeleteImageAsync(string publicId)
         {
-            throw new NotImplementedException();
+            var deletionParams = new DeletionParams(publicId);
+            var deletionResult = await _cloudinary.DestroyAsync(deletionParams);
+
+            if (deletionResult.Result == "ok" || deletionResult.Result == "not found")
+            {
+                return "Deleted";
+            }
+
+            throw new Exception($"Failed to delete image: {deletionResult.Error?.Message}");
         }
 
         public async Task<string> UploadImageAsync(IFormFile file, string folderName)
