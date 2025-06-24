@@ -42,6 +42,8 @@ builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
 builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
 builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepositoryImpl>();
+builder.Services.AddScoped<IDashboardService, DashboardServiceImpl>();
 
 //Configure Elasticsearch settings (local)
 var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
