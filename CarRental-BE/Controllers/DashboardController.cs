@@ -1,0 +1,140 @@
+﻿using CarRental_BE.Data;
+using CarRental_BE.Models.VO.Statistic;
+using CarRental_BE.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace CarRental_BE.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize(Roles = "admin")]
+    public class DashboardController : ControllerBase
+    {
+        private readonly IDashboardService _dashboardService;
+
+        public DashboardController(IDashboardService dashboardService)
+        {
+            _dashboardService = dashboardService;
+        }
+
+        [HttpGet("stats")]
+        public async Task<ActionResult<ApiResponse<DashboardStatsVO>>> GetDashboardStats()
+        {
+            try
+            {
+                var stats = await _dashboardService.GetDashboardStatsAsync();
+                return Ok(new ApiResponse<DashboardStatsVO>(200, "Dashboard stats retrieved successfully", stats));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<DashboardStatsVO>(500, "An error occurred while retrieving dashboard stats", default));
+            }
+        }
+
+        [HttpGet("revenue/monthly")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<MonthlyRevenueVO>>>> GetMonthlyRevenue([FromQuery] int year = 0)
+        {
+            try
+            {
+                if (year == 0) year = DateTime.Now.Year;
+                var revenue = await _dashboardService.GetMonthlyRevenueAsync(year);
+                return Ok(new ApiResponse<IEnumerable<MonthlyRevenueVO>>(200, "Monthly revenue retrieved successfully", revenue));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<IEnumerable<MonthlyRevenueVO>>(500, "An error occurred while retrieving monthly revenue", null));
+            }
+        }
+
+        [HttpGet("vehicles/top-booked")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<TopBookedVehicleVO>>>> GetTopBookedVehicles([FromQuery] int count = 5)
+        {
+            try
+            {
+                var vehicles = await _dashboardService.GetTopBookedVehiclesAsync(count);
+                return Ok(new ApiResponse<IEnumerable<TopBookedVehicleVO>>(200, "Top booked vehicles retrieved successfully", vehicles));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<IEnumerable<TopBookedVehicleVO>>(500, "An error occurred while retrieving top booked vehicles", null));
+            }
+        }
+
+        [HttpGet("customers/top-paying")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<TopPayingCustomerVO>>>> GetTopPayingCustomers([FromQuery] int count = 5)
+        {
+            try
+            {
+                var customers = await _dashboardService.GetTopPayingCustomersAsync(count);
+                return Ok(new ApiResponse<IEnumerable<TopPayingCustomerVO>>(200, "Top paying customers retrieved successfully", customers));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<IEnumerable<TopPayingCustomerVO>>(500, "An error occurred while retrieving top paying customers", null));
+            }
+        }
+
+        [HttpGet("bookings/recent")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<RecentBookingVO>>>> GetRecentBookings([FromQuery] int count = 10)
+        {
+            try
+            {
+                var bookings = await _dashboardService.GetRecentBookingsAsync(count);
+                return Ok(new ApiResponse<IEnumerable<RecentBookingVO>>(200, "Recent bookings retrieved successfully", bookings));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<IEnumerable<RecentBookingVO>>(500, "An error occurred while retrieving recent bookings", null));
+            }
+        }
+
+        [HttpGet("bookings/status-counts")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<BookingStatusCountVO>>>> GetBookingStatusCounts()
+        {
+            try
+            {
+                var statusCounts = await _dashboardService.GetBookingStatusCountsAsync();
+                return Ok(new ApiResponse<IEnumerable<BookingStatusCountVO>>(200, "Booking status counts retrieved successfully", statusCounts));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<IEnumerable<BookingStatusCountVO>>(500, "An error occurred while retrieving booking status counts", null));
+            }
+        }
+
+        [HttpGet("transactions/type-counts")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<TransactionTypeCountVO>>>> GetTransactionTypeCounts()
+        {
+            try
+            {
+                var typeCounts = await _dashboardService.GetTransactionTypeCountsAsync();
+                return Ok(new ApiResponse<IEnumerable<TransactionTypeCountVO>>(200, "Transaction type counts retrieved successfully", typeCounts));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<IEnumerable<TransactionTypeCountVO>>(500, "An error occurred while retrieving transaction type counts", null));
+            }
+        }
+
+        [HttpGet("transactions/daily")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<DailyTransactionVO>>>> GetDailyTransactions(
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            try
+            {
+                startDate ??= DateTime.Now.AddDays(-30);
+                endDate ??= DateTime.Now;
+
+                var transactions = await _dashboardService.GetDailyTransactionsAsync(startDate.Value, endDate.Value);
+                return Ok(new ApiResponse<IEnumerable<DailyTransactionVO>>(200, "Daily transactions retrieved successfully", transactions));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<IEnumerable<DailyTransactionVO>>(500, "An error occurred while retrieving daily transactions", null));
+            }
+        }
+
+    }
+}
