@@ -20,24 +20,21 @@ using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
 
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-{
-    EnvironmentName = "Development"
-});
+var builder = WebApplication.CreateBuilder(args);
 
-Console.WriteLine(">>> builder ENV: " + builder.Environment.EnvironmentName);
+//Console.WriteLine(">>> builder ENV: " + builder.Environment.EnvironmentName);
 
-foreach (var kvp in builder.Configuration.AsEnumerable())
-{
-    if (kvp.Key.Contains("ENVIRONMENT", StringComparison.OrdinalIgnoreCase))
-        Console.WriteLine($">>> Found ENV var: {kvp.Key} = {kvp.Value}");
-}
+//foreach (var kvp in builder.Configuration.AsEnumerable())
+//{
+//    if (kvp.Key.Contains("ENVIRONMENT", StringComparison.OrdinalIgnoreCase))
+//        Console.WriteLine($">>> Found ENV var: {kvp.Key} = {kvp.Value}");
+//}
 
 // Add services to the container.
 builder.Services.AddControllers();
 
 // Load User Secrets (automatically included in Development)
-builder.Configuration.AddUserSecrets<Program>();
+//builder.Configuration.AddUserSecrets<Program>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
