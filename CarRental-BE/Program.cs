@@ -24,12 +24,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 //Console.WriteLine(">>> builder ENV: " + builder.Environment.EnvironmentName);
 
-//foreach (var kvp in builder.Configuration.AsEnumerable())
-//{
-//    if (kvp.Key.Contains("ENVIRONMENT", StringComparison.OrdinalIgnoreCase))
-//        Console.WriteLine($">>> Found ENV var: {kvp.Key} = {kvp.Value}");
-//}
-
 // Add services to the container.
 builder.Services.AddControllers();
 
