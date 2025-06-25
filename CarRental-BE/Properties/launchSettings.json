@@ -1,4 +1,13 @@
 {
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:53665/",
+      "sslPort": 44386
+    }
+  },
   "profiles": {
     "CarRental_BE": {
       "commandName": "Project",
@@ -10,21 +19,21 @@
           }
         ]
       },
-      "http": {
-        "commandName": "Project",
-        "environmentVariables": {
-          "ASPNETCORE_ENVIRONMENT": "Development"
-        },
+      //"http": {
+      //  "commandName": "Project",
+      //  "environmentVariables": {
+      //    "ASPNETCORE_ENVIRONMENT": "Development"
+      //  },
+      //  "dotnetRunMessages": true,
+      //  "applicationUrl": "http://localhost:5227"
+      //},
+      //"https": {
+      //  "commandName": "Project",
+      //  "environmentVariables": {
+      //    "ASPNETCORE_ENVIRONMENT": "Development"
+      //  },
         "dotnetRunMessages": true,
         "applicationUrl": "http://localhost:5227"
-      },
-      "https": {
-        "commandName": "Project",
-        "environmentVariables": {
-          "ASPNETCORE_ENVIRONMENT": "Development"
-        },
-        "dotnetRunMessages": true,
-        "applicationUrl": "https://localhost:7143;http://localhost:5227"
       },
       "IIS Express": {
         "commandName": "IISExpress",
@@ -32,15 +41,6 @@
         "environmentVariables": {
           "ASPNETCORE_ENVIRONMENT": "Development"
         }
-      }
-    },
-    "$schema": "https://json.schemastore.org/launchsettings.json",
-    "iisSettings": {
-      "windowsAuthentication": false,
-      "anonymousAuthentication": true,
-      "iisExpress": {
-        "applicationUrl": "http://localhost:53665/",
-        "sslPort": 44386
       }
     }
   }
