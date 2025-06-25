@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
     "CarRental_BE": {
       "commandName": "Project",
@@ -33,14 +34,14 @@
           "ASPNETCORE_ENVIRONMENT": "Development"
         }
       }
-    },
-    "$schema": "https://json.schemastore.org/launchsettings.json",
-    "iisSettings": {
-      "windowsAuthentication": false,
-      "anonymousAuthentication": true,
-      "iisExpress": {
-        "applicationUrl": "http://localhost:53665/",
-        "sslPort": 44386
-      }
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:53665/",
+      "sslPort": 44386
     }
   }
+}
