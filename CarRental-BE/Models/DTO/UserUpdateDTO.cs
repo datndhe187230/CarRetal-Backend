@@ -16,7 +16,7 @@ namespace CarRental_BE.Models.DTO
         [StringLength(20)]
         public string? NationalId { get; set; }
 
-        public string? DrivingLicenseUri { get; set; }
+        public IFormFile? DrivingLicenseUri { get; set; }
 
          
         public string? HouseNumberStreet { get; set; }
