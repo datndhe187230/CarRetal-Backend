@@ -22,9 +22,13 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+//Console.WriteLine(">>> builder ENV: " + builder.Environment.EnvironmentName);
 
+// Add services to the container.
 builder.Services.AddControllers();
+
+// Load User Secrets (automatically included in Development)
+//builder.Configuration.AddUserSecrets<Program>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -42,6 +46,8 @@ builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
 builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
 builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepositoryImpl>();
+builder.Services.AddScoped<IDashboardService, DashboardServiceImpl>();
 
 //Configure Elasticsearch settings (local)
 var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
@@ -71,9 +77,6 @@ builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
 // Configure email settings
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
-
-// Load User Secrets (automatically included in Development)
-builder.Configuration.AddUserSecrets<Program>();
 
 // Register DbContext using connection string from user secrets
 builder.Services.AddDbContext<CarRentalContext>(options =>
