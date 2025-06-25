@@ -7,6 +7,7 @@ using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
 using CarRental_BE.Services.Impl;
+using CarRental_BE.Services.Vnpay;
 using CloudinaryDotNet;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
@@ -34,6 +35,8 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
+
+
 //Add Repository and Services
 builder.Services.AddScoped<IAccountRepository, AccountRepositoryImpl>();
 builder.Services.AddScoped<IUserRepository, UserRepositoryImpl>();
@@ -166,7 +169,8 @@ builder.Services.AddAuthentication(options =>
             }
         };
     });
-
+//Add VnPay
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 //Register AutoMapper 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 

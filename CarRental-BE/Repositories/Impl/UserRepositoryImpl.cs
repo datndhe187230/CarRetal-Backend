@@ -1,10 +1,12 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Exceptions;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Services;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using InvalidOperationException = CarRental_BE.Exceptions.InvalidOperationException;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -14,13 +16,20 @@ namespace CarRental_BE.Repositories.Impl
         private readonly IAccountRepository _accountRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IRedisService _redisService;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public UserRepositoryImpl(CarRentalContext context, IAccountRepository accountRepository, IHttpContextAccessor httpContextAccessor, IRedisService redisService)
+        public UserRepositoryImpl(CarRentalContext context,
+            IAccountRepository accountRepository,
+            IHttpContextAccessor httpContextAccessor, 
+            IRedisService redisService,
+            ICloudinaryService cloudinaryService
+            )
         {
             _context = context;
             _accountRepository = accountRepository;
             _httpContextAccessor = httpContextAccessor;
             _redisService = redisService;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task<UserProfile?> GetById(Guid id)
@@ -37,14 +46,14 @@ namespace CarRental_BE.Repositories.Impl
                 .Include(u => u.IdNavigation)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (user == null) return null;
+            if (user == null) throw new UserNotFound2Exception();
 
             // Update UserProfile fields
             user.FullName = dto.FullName;
             user.Dob = dto.Dob;
             user.PhoneNumber = dto.PhoneNumber;
             user.NationalId = dto.NationalId;
-            user.DrivingLicenseUri = dto.DrivingLicenseUri;
+            //user.DrivingLicenseUri = dto.DrivingLicenseUri;
             user.HouseNumberStreet = dto.HouseNumberStreet;
             user.Ward = dto.Ward;
             user.District = dto.District;
@@ -56,15 +65,50 @@ namespace CarRental_BE.Repositories.Impl
                 // Check if new email already exists in database
                 if (await _context.Accounts.AnyAsync(a => a.Email == dto.Email && a.Id != id))
                 {
-                    throw new Exception("Email already exists");
+                    throw new EmailExistException();
                 }
 
                 user.IdNavigation.Email = dto.Email;
                 user.IdNavigation.UpdatedAt = DateTime.UtcNow;
             }
 
+            // Handle file upload
+            if (dto.DrivingLicenseUri != null && dto.DrivingLicenseUri.Length > 0)
+            {
+                var url = await _cloudinaryService.UploadImageAsync(dto.DrivingLicenseUri, "CarRental/Documents");
+                user.DrivingLicenseUri = url;
+            }
+
+
             await _context.SaveChangesAsync();
             return user;
+        }
+
+        private string GetPublicIdFromUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return string.Empty;
+
+            try
+            {
+                var uri = new Uri(url);
+                var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+                // Find the index of the "upload" segment
+                var uploadIndex = Array.IndexOf(segments, "upload");
+                if (uploadIndex == -1 || uploadIndex + 2 >= segments.Length)
+                    return string.Empty;
+
+                // Everything after upload and version is the public ID (joined if in folders)
+                var publicIdSegments = segments.Skip(uploadIndex + 2).ToArray(); // skip "v123456789"
+                var publicIdWithExt = string.Join("/", publicIdSegments); // supports folders
+                var publicId = Path.ChangeExtension(publicIdWithExt, null); // remove file extension
+
+                return publicId;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         public async Task<bool> ChangePassword(Guid id, ChangePasswordDTO dto)
