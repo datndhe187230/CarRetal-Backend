@@ -143,18 +143,24 @@ namespace CarRental_BE.Repositories.Impl
         {
             return await _context.Bookings
                 .Include(b => b.Car)
-                .GroupBy(b => new { b.CarId, b.Car })
+                .GroupBy(b => new
+                {
+                    b.CarId,
+                    b.Car.Brand,
+                    b.Car.Model,
+                    b.Car.ProductionYear,
+                    b.Car.Status
+                })
                 .Select(g => new TopBookedVehicleVO
                 {
                     CarId = g.Key.CarId,
-                    CarName = g.Key.Car.Brand + " " + g.Key.Car.Model,
-                    Brand = g.Key.Car.Brand,
-                    Model = g.Key.Car.Model,
-                    Year = g.Key.Car.ProductionYear,
+                    Brand = g.Key.Brand,
+                    Model = g.Key.Model,
+                    Year = g.Key.ProductionYear,
                     TotalBookings = g.Count(),
                     Revenue = g.Sum(b => (decimal)(b.BasePrice ?? 0)),
                     UtilizationRate = (decimal)g.Count() / 30 * 100, // Assuming 30 days calculation
-                    Status = g.Key.Car.Status,
+                    Status = g.Key.Status,
                     Trend = "+12%"
                 })
                 .OrderByDescending(x => x.TotalBookings)

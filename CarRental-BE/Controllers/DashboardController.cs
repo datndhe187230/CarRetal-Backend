@@ -50,29 +50,17 @@ namespace CarRental_BE.Controllers
         [HttpGet("vehicles/top-booked")]
         public async Task<ActionResult<ApiResponse<IEnumerable<TopBookedVehicleVO>>>> GetTopBookedVehicles([FromQuery] int count = 5)
         {
-            try
-            {
+            
                 var vehicles = await _dashboardService.GetTopBookedVehiclesAsync(count);
                 return Ok(new ApiResponse<IEnumerable<TopBookedVehicleVO>>(200, "Top booked vehicles retrieved successfully", vehicles));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ApiResponse<IEnumerable<TopBookedVehicleVO>>(500, "An error occurred while retrieving top booked vehicles", null));
-            }
+            
         }
 
         [HttpGet("customers/top-paying")]
-        public async Task<ActionResult<ApiResponse<IEnumerable<TopPayingCustomerVO>>>> GetTopPayingCustomers([FromQuery] int count = 5)
-        {
-            try
-            {
+        public async Task<ActionResult<ApiResponse<IEnumerable<TopPayingCustomerVO>>>> GetTopPayingCustomers([FromQuery] int count = 6)
+        {   
                 var customers = await _dashboardService.GetTopPayingCustomersAsync(count);
                 return Ok(new ApiResponse<IEnumerable<TopPayingCustomerVO>>(200, "Top paying customers retrieved successfully", customers));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ApiResponse<IEnumerable<TopPayingCustomerVO>>(500, "An error occurred while retrieving top paying customers", null));
-            }
         }
 
         [HttpGet("bookings/recent")]
