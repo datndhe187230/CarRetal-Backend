@@ -5,6 +5,8 @@ public class BookingDetailVO
 {
     public string BookingNumber { get; set; }
     public string CarName { get; set; }
+
+    public Guid CarId { get; set; }
     public string Status { get; set; }
     public DateTime? PickUpTime { get; set; }
     public DateTime? DropOffTime { get; set; }

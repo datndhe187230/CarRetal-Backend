@@ -20,6 +20,12 @@
             : base($"No user found with email: {email}", 1001, 404) { }
     }
 
+    public class UserNotFound2Exception : AppException
+    {
+        public UserNotFound2Exception( )
+            : base($"No user found  ", 1001, 404) { }
+    }
+
     //BOOKING EXCEPTION - CODE : 11xx
     public class BookingNotFoundException : AppException
     {

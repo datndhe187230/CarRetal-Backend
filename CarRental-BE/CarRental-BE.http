@@ -135,5 +135,13 @@ Content-Type: application/json
   ###
 GET http://localhost:5227/api/vnpay/CreatePaymentUrl?money=5000&description=Test+Payment
 
-  ###
-GET http://localhost:5227/api/vnpay/Callback
+###
+POST http://localhost:5227/api/Payment/CreatePaymentUrlVnpay
+Content-Type: application/json
+
+{
+  "OrderType": "other",
+  "Amount": 100000,
+  "OrderDescription": "Test",
+  "Name": "Test"
+}

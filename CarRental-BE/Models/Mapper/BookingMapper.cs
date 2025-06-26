@@ -46,6 +46,7 @@ public static class BookingMapper
         {
             BookingNumber = booking.BookingNumber,
             CarName = $"{car?.Brand} {car?.Model}",
+            CarId = car.Id,
             Status = booking.Status,
             PickUpTime = booking.PickUpTime,
             DropOffTime = booking.DropOffTime,
@@ -77,12 +78,12 @@ public static class BookingMapper
 
             //check renter is driver
             isRenterSameAsDriver =
-                        booking.DriverFullName == userProfile?.FullName &&
+                        booking.DriverFullName.Trim() == userProfile?.FullName.Trim() &&
                         booking.DriverDob == userProfile?.Dob &&
                         booking.DriverPhoneNumber == userProfile?.PhoneNumber &&
                         booking.DriverEmail == account?.Email &&
                         booking.DriverNationalId == userProfile?.NationalId &&
-                        booking.DriverDrivingLicenseUri == userProfile?.DrivingLicenseUri &&
+                        //booking.DriverDrivingLicenseUri == userProfile?.DrivingLicenseUri &&
                         booking.DriverHouseNumberStreet == userProfile?.HouseNumberStreet &&
                         booking.DriverWard == userProfile?.Ward &&
                         booking.DriverDistrict == userProfile?.District &&
