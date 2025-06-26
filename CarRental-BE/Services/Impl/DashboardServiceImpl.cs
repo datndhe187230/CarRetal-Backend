@@ -25,7 +25,7 @@ namespace CarRental_BE.Services.Impl
 
             return new DashboardStatsVO
             {
-                TotalRevenue = totalRevenue,
+                TotalRevenue = totalRevenue/10,
                 ActiveBookings = activeBookings,
                 TotalCustomers = totalBookings, // Simplified - would need customer count
                 FleetUtilization = fleetUtilization,
