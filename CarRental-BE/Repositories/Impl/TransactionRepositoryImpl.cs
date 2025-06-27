@@ -22,29 +22,58 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<IEnumerable<TopPayingCustomerVO>> GetTopPayingCustomersAsync(int count = 5)
         {
-            return await _context.Transactions
-                .Include(t => t.Wallet)
-                .Include(t => t.BookingNumberNavigation)
-                .Include(t => t.Wallet.IdNavigation)
-                .Include(t => t.Wallet.IdNavigation.UserProfile)
+            var grouped = await _context.Transactions
                 .Where(t => t.Status == "Completed")
-                .GroupBy(t => new { t.Wallet.IdNavigation})
-                .Select(g => new TopPayingCustomerVO
+                .Select(t => new
                 {
-                    AccountId = g.Key.IdNavigation.Id,
-                    Email = g.Key.IdNavigation.Email,
-                    CustomerName = g.Key.IdNavigation.UserProfile.FullName ?? "Unknown",
-                    TotalPayments = g.Sum(t => (decimal)t.Amount),
-                    Phone = g.Key.IdNavigation.UserProfile.PhoneNumber ?? "Unknown",
-                    TotalBookings = g.Select(t => t.BookingNumber).Distinct().Count(),
-                    MemberSince = g.Key.IdNavigation.CreatedAt.Year.ToString() ?? "Unknown",
-                    LastBooking = g.Max(t => t.CreatedAt).HasValue ?
-                        (DateTime.Now - g.Max(t => t.CreatedAt).Value).Days + " days ago" : "Unknown",
-                    PreferredVehicle = g.FirstOrDefault().CarName ?? "Unknown"
+                    t.Amount,
+                    WalletId = t.WalletId,
+                    AccountId = t.Wallet.IdNavigation.Id,
+                    Email = t.Wallet.IdNavigation.Email,
+                    FullName = t.Wallet.IdNavigation.UserProfile.FullName,
+                    Phone = t.Wallet.IdNavigation.UserProfile.PhoneNumber,
+                    JoinYear = t.Wallet.IdNavigation.CreatedAt.Year,
+                    Bookings = t.BookingNumber,
+                    CarName = t.BookingNumberNavigation.Car != null
+                        ? t.BookingNumberNavigation.Car.Brand + " " + t.BookingNumberNavigation.Car.Model
+                        : "Unknown",
+                    LastBookingAt = t.CreatedAt,
+                })
+                .ToListAsync(); // Force evaluation before complex LINQ
+
+            var result = grouped
+                .GroupBy(x => new
+                {
+                    x.WalletId,
+                    x.AccountId,
+                    x.Email,
+                    x.FullName,
+                    x.Phone,
+                    x.JoinYear
+                })
+                .Select(g =>
+                {
+                    var lastBooking = g.Max(x => x.LastBookingAt);
+                    return new TopPayingCustomerVO
+                    {
+                        AccountId = g.Key.AccountId,
+                        Email = g.Key.Email,
+                        CustomerName = g.Key.FullName ?? "Unknown",
+                        Phone = g.Key.Phone ?? "Unknown",
+                        MemberSince = g.Key.JoinYear.ToString(),
+                        TotalPayments = g.Sum(x => (decimal)x.Amount),
+                        TotalBookings = g.Select(x => x.Bookings).Distinct().Count(),
+                        LastBooking = lastBooking.HasValue
+                            ? (DateTime.Now - lastBooking.Value).Days + " days ago"
+                            : "Unknown",
+                        PreferredVehicle = g.FirstOrDefault()?.CarName ?? "Unknown"
+                    };
                 })
                 .OrderByDescending(x => x.TotalPayments)
                 .Take(count)
-                .ToListAsync();
+                .ToList();
+
+            return result;
         }
 
         public async Task<IEnumerable<TransactionTypeCountVO>> GetTransactionTypeCountsAsync()
