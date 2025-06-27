@@ -1,0 +1,156 @@
+﻿@CarRental_BE_HostAddress = http://localhost:5227
+@TestAccountId = B0538894-5AD1-4300-8B71-60AA84574954
+
+### Test Wallet Balance - Get wallet balance for account
+GET {{CarRental_BE_HostAddress}}/api/Wallet/balance/{{TestAccountId}}
+Accept: application/json
+
+### Test Create Wallet - Create wallet if not exists
+POST {{CarRental_BE_HostAddress}}/api/Wallet/create/{{TestAccountId}}
+Accept: application/json
+
+### Test Top-up Money - Add money to wallet
+POST {{CarRental_BE_HostAddress}}/api/Wallet/topup/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 2000000,
+  "message": "Top-up via API test"
+}
+
+### Test Withdraw Money - Withdraw money from wallet
+POST {{CarRental_BE_HostAddress}}/api/Wallet/withdraw/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 500000,
+  "message": "Withdrawal via API test"
+}
+
+### Test Transaction History - Get all transactions (default pagination)
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}
+Accept: application/json
+
+### Test Transaction History - Get transactions with pagination
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?pageNumber=1&pageSize=5
+Accept: application/json
+
+### Test Transaction History - Get transactions with search filter
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?searchTerm=top-up
+Accept: application/json
+
+### Test Transaction History - Get transactions with date filter (from date)
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?fromDate=2024-01-01
+Accept: application/json
+
+### Test Transaction History - Get transactions with date filter (to date)
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?toDate=2024-12-31
+Accept: application/json
+
+### Test Transaction History - Get transactions with date range filter
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?fromDate=2024-01-01&toDate=2024-12-31
+Accept: application/json
+
+### Test Transaction History - Get transactions with type filter
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?type=withdrawal
+Accept: application/json
+
+### Test Transaction History - Get transactions with status filter
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?status=completed
+Accept: application/json
+
+### Test Transaction History - Get transactions with multiple filters
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?searchTerm=withdrawal&type=withdrawal&status=completed&pageNumber=1&pageSize=10
+Accept: application/json
+
+### Test Transaction Detail - Get specific transaction detail (replace with actual transaction ID)
+@TestTransactionId = 00000000-0000-0000-0000-000000000000
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}/{{TestTransactionId}}
+Accept: application/json
+
+### Test Large Top-up - Add large amount
+POST {{CarRental_BE_HostAddress}}/api/Wallet/topup/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 10000000,
+  "message": "Large top-up test"
+}
+
+### Test Small Withdrawal - Withdraw small amount
+POST {{CarRental_BE_HostAddress}}/api/Wallet/withdraw/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 100000,
+  "message": "Small withdrawal test"
+}
+
+### Test Invalid Withdrawal - Try to withdraw more than balance (should fail)
+POST {{CarRental_BE_HostAddress}}/api/Wallet/withdraw/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 999999999,
+  "message": "Invalid large withdrawal test"
+}
+
+### Test Invalid Amount - Try to withdraw negative amount (should fail)
+POST {{CarRental_BE_HostAddress}}/api/Wallet/withdraw/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": -1000,
+  "message": "Invalid negative withdrawal test"
+}
+
+### Test Invalid Amount - Try to top-up zero amount (should fail)
+POST {{CarRental_BE_HostAddress}}/api/Wallet/topup/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 0,
+  "message": "Invalid zero top-up test"
+}
+
+### Test Different Account - Test with different account ID
+@TestAccountId2 = C807356F-26D3-4F2C-933E-0A351EC1BF33
+GET {{CarRental_BE_HostAddress}}/api/Wallet/balance/{{TestAccountId2}}
+Accept: application/json
+
+### Test Pagination - Get page 2 with 3 items per page
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?pageNumber=2&pageSize=3
+Accept: application/json
+
+### Test Complex Search - Search with multiple criteria
+GET {{CarRental_BE_HostAddress}}/api/Wallet/transactions/{{TestAccountId}}?searchTerm=test&fromDate=2024-01-01&toDate=2024-12-31&pageNumber=1&pageSize=20
+Accept: application/json
+
+### Test Booking-related Transaction - Top-up with booking reference
+POST {{CarRental_BE_HostAddress}}/api/Wallet/topup/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 1500000,
+  "message": "Deposit refund for booking BOOK001"
+}
+
+### Test Car-related Transaction - Withdrawal for car rental
+POST {{CarRental_BE_HostAddress}}/api/Wallet/withdraw/{{TestAccountId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": 1800000,
+  "message": "Payment for Nissan Navara El 2017 rental"
+}
+
+
