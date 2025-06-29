@@ -3,6 +3,7 @@ using CarRental_BE.Exceptions;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.Enum;
+using CarRental_BE.Models.VO.Statistic;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarRental_BE.Repositories.Impl
@@ -77,8 +78,8 @@ namespace CarRental_BE.Repositories.Impl
                  throw new BookingNotFoundException(bookingNumber);
 
             // Check if booking status allows editing
-            if (booking.Status != BookingStatusEnum.PendingDeposit.ToString() &&
-                booking.Status != BookingStatusEnum.Confirmed.ToString())
+            if (!booking.Status.Equals(BookingStatusEnum.PendingDeposit.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                !booking.Status.Equals(BookingStatusEnum.Confirmed.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 throw new BookingEditException(booking.Status);
             }
@@ -99,6 +100,89 @@ namespace CarRental_BE.Repositories.Impl
 
             await _context.SaveChangesAsync();
             return booking;
+        }
+
+        public async Task<IEnumerable<Booking>> GetRecentBookingsAsync(int count = 10)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Include(b => b.Account)
+                .OrderByDescending(b => b.CreatedAt)
+                .Take(count)
+                .ToListAsync();
+        }
+
+        //Dashboard statistics methods
+        public async Task<int> GetTotalBookingsCountAsync()
+        {
+            return await _context.Bookings.CountAsync();
+        }
+
+        public async Task<int> GetActiveBookingsCountAsync()
+        {
+            return await _context.Bookings
+                .CountAsync(b => b.Status == "Active" || b.Status == "Confirmed");
+        }
+
+        public async Task<decimal> GetTotalRevenueAsync()
+        {
+            return await _context.Bookings
+                .Where(b => b.Status == "Completed")
+                .SumAsync(b => (decimal)(b.BasePrice ?? 0));
+        }
+
+        public async Task<IEnumerable<MonthlyRevenueVO>> GetMonthlyRevenueAsync(int year)
+        {
+            return await _context.Bookings
+                .Where(b => b.CreatedAt.HasValue && b.CreatedAt.Value.Year == year && b.Status == "Completed")
+                .GroupBy(b => b.CreatedAt.Value.Month)
+                .Select(g => new MonthlyRevenueVO
+                {
+                    Month = g.Key.ToString(),
+                    Total = g.Sum(b => (decimal)(b.BasePrice ?? 0))
+                })
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<TopBookedVehicleVO>> GetTopBookedVehiclesAsync(int count = 5)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .GroupBy(b => new
+                {
+                    b.CarId,
+                    b.Car.Brand,
+                    b.Car.Model,
+                    b.Car.ProductionYear,
+                    b.Car.Status
+                })
+                .Select(g => new TopBookedVehicleVO
+                {
+                    CarId = g.Key.CarId,
+                    Brand = g.Key.Brand,
+                    Model = g.Key.Model,
+                    Year = g.Key.ProductionYear,
+                    TotalBookings = g.Count(),
+                    Revenue = g.Sum(b => (decimal)(b.BasePrice ?? 0)),
+                    UtilizationRate = (decimal)g.Count() / 30 * 100, // Assuming 30 days calculation
+                    Status = g.Key.Status,
+                    Trend = "+12%"
+                })
+                .OrderByDescending(x => x.TotalBookings)
+                .Take(count)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<BookingStatusCountVO>> GetBookingStatusCountsAsync()
+        {
+            return await _context.Bookings
+                .GroupBy(b => b.Status)
+                .Select(g => new BookingStatusCountVO
+                {
+                    Status = g.Key ?? "Unknown",
+                    Count = g.Count()
+                })
+                .ToListAsync();
         }
     }
 }

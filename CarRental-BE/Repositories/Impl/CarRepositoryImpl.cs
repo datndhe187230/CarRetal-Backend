@@ -195,7 +195,7 @@ namespace CarRental_BE.Repositories.Impl
             return string.Join(",", terms);
         }
 
-        private string GetPublicIdFromUrl(string url)
+        private string  GetPublicIdFromUrl(string url)
         {
             if (string.IsNullOrEmpty(url)) return string.Empty;
 
