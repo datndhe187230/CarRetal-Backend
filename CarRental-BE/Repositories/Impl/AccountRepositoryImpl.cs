@@ -26,11 +26,18 @@ namespace CarRental_BE.Repositories.Impl
             return account;
         }
 
-
-        public async Task<Account?> GetAccountById(Guid id)
+        
+        public async Task<Account?> GetByIdAsync(Guid id)
         {
             return await _carRentalContext.Accounts
-                                      .FirstOrDefaultAsync(a => a.Id == id);
+                .FirstOrDefaultAsync(a => a.Id == id);
+        }
+
+       
+        public async Task UpdateAsync(Account account)
+        {
+            _carRentalContext.Accounts.Update(account);
+            await _carRentalContext.SaveChangesAsync();
         }
     }
 }
