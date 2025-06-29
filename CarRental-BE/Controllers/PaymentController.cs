@@ -26,7 +26,8 @@ namespace CarRental_BE.Controllers
         public IActionResult PaymentCallbackVnpay()
         {
             var response = _vnPayService.PaymentExecute(Request.Query);
-            return Ok(response);
+            return Redirect($"http://localhost:3000/vnpay-callback?{Request.QueryString}");
+
         }
     }
 }

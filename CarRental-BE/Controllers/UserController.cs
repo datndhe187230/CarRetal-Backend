@@ -106,6 +106,7 @@ namespace CarRental_BE.Controllers
         }
 
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<ApiResponse<object>> Register([FromBody] RegisterDTO dto)
         {
             if (!ModelState.IsValid)
