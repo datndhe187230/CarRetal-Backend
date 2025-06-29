@@ -1,5 +1,7 @@
 ﻿namespace CarRental_BE.Exceptions
 {
+
+    //USER EXCEPTION - CODE: 10xx 
     public class UsernameExistException : AppException
     {
         public UsernameExistException()
@@ -16,5 +18,39 @@
     {
         public UserNotFoundException(string email)
             : base($"No user found with email: {email}", 1001, 404) { }
+    }
+
+    public class UserNotFound2Exception : AppException
+    {
+        public UserNotFound2Exception( )
+            : base($"No user found  ", 1001, 404) { }
+    }
+
+    //BOOKING EXCEPTION - CODE : 11xx
+    public class BookingNotFoundException : AppException
+    {
+        public BookingNotFoundException(string bookingNumber)
+            : base($"Booking not found: {bookingNumber}", 1101, 404)
+        { }
+    }
+
+    public class BookingEditException : AppException
+    {
+        public BookingEditException(string status)
+            : base($"Booking cannot be updated because it has status: {status}", 1100, 400)
+        {
+        }
+    }
+
+    public class InvalidOperationException : AppException
+    {
+        public InvalidOperationException(string message)
+            : base(message, 1002, 400) { }
+    }
+
+    public class UnauthorizedException : AppException
+    {
+        public UnauthorizedException(string message)
+            : base(message, 1005, 401) { }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -40,6 +41,52 @@ namespace CarRental_BE.Controllers
             var (bookings, totalCount) = await _bookingService.GetBookingsWithPagingAsync(page, pageSize);
             var paginatedResponse = new PaginationResponse<BookingVO>(bookings, page, pageSize, totalCount);
             return Ok(new ApiResponse<PaginationResponse<BookingVO>>(200, "Success", paginatedResponse));
+        }
+        [HttpPut("{bookingNumber}/cancel")]
+        //task,async bat dong bo
+        public async Task<IActionResult> CancelBooking(string bookingNumber)
+        {
+            var result = await _bookingService.CancelBookingAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+
+            return Ok(new ApiResponse<string>(200, "Booking cancelled successfully"));
+        }
+        [HttpPut("{bookingNumber}/confirm-pickup")]
+        public async Task<IActionResult> ConfirmPickup(string bookingNumber)
+        {
+            var result = await _bookingService.ConfirmPickupAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+
+            return Ok(new ApiResponse<string>(200, "Pick-up successfully"));
+        }
+        [HttpPut("{bookingNumber}/return")]
+        public async Task<IActionResult> ReturnCar(string bookingNumber)
+        {
+            var result = await _bookingService.ReturnCarAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Return processed successfully"));
+        }
+
+
+        [HttpGet("detail/{bookingNumber}")]
+        public async Task<ActionResult<ApiResponse<BookingDetailVO>>> GetBookingById(string bookingNumber)
+        {
+            var data = await _bookingService.GetBookingByBookingIdAsync(bookingNumber);
+            if (data == null)
+                return NotFound(new ApiResponse<BookingVO>(404, "Booking detail not found", null));
+
+            return Ok(new ApiResponse<BookingDetailVO>(200, "Success", data));
+        }
+        [HttpPut("edit/{bookingNumber}")]
+        public async Task<ActionResult<ApiResponse<BookingDetailVO>>> UpdateBooking(
+    string bookingNumber,
+    [FromBody] BookingEditDTO bookingDto)
+        {
+            var updatedBooking = await _bookingService.UpdateBookingAsync(bookingNumber, bookingDto);
+            return Ok(new ApiResponse<BookingDetailVO>(200, "Success", updatedBooking));
         }
     }
 }

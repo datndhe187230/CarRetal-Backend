@@ -7,6 +7,7 @@ using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
 using CarRental_BE.Services.Impl;
+using CarRental_BE.Services.Vnpay;
 using CloudinaryDotNet;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
@@ -22,14 +23,20 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+//Console.WriteLine(">>> builder ENV: " + builder.Environment.EnvironmentName);
 
+// Add services to the container.
 builder.Services.AddControllers();
+
+// Load User Secrets (automatically included in Development)
+//builder.Configuration.AddUserSecrets<Program>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
+
+
 //Add Repository and Services
 builder.Services.AddScoped<IAccountRepository, AccountRepositoryImpl>();
 builder.Services.AddScoped<IUserRepository, UserRepositoryImpl>();
@@ -42,6 +49,10 @@ builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
 builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
 builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepositoryImpl>();
+builder.Services.AddScoped<IDashboardService, DashboardServiceImpl>();
+builder.Services.AddScoped<IWalletRepository, WalletRepositoryImpl>();
+builder.Services.AddScoped<IWalletService, WalletServiceImpl>();
 
 //Configure Elasticsearch settings (local)
 var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
@@ -65,13 +76,12 @@ if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
 
+// Add VNPAY service to the container.
+builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
-
-// Load User Secrets (automatically included in Development)
-builder.Configuration.AddUserSecrets<Program>();
 
 // Register DbContext using connection string from user secrets
 builder.Services.AddDbContext<CarRentalContext>(options =>
@@ -161,7 +171,8 @@ builder.Services.AddAuthentication(options =>
             }
         };
     });
-
+//Add VnPay
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 //Register AutoMapper 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 

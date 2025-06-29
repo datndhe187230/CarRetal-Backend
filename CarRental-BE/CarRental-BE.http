@@ -32,8 +32,8 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "email": "user1@example.com",
-  "password": "@Quanquan3007"
+  "email": "vothif@gmail.com",
+  "password": "@Pass1234"
 }
 
 ###
@@ -121,6 +121,39 @@ Accept: application/json
 GET http://localhost:5227/api/Booking?page=1&pageSize=5
 Accept: application/json
 
-### Get bookings by account ID
-GET http://localhost:5227/api/Booking/3E90353C-1C5D-469E-A572-0579A1C0468D
+### Get bookings by booking number
+GET http://localhost:5227/api/Booking/detail/BOOK001
 Accept: application/json
+
+ ### Edit bookings by booking number
+PUT http://localhost:5227/api/Booking/edit/BOOK001
+Accept: application/json
+Content-Type: application/json
+
+{
+    "driverFullName": "Nguyen Van A Updateaad22",
+    "driverDob": "1990-01-01",
+    "driverEmail": "updated.email@example.com",
+    "driverPhoneNumber": "0987654321",
+    "driverNationalId": "123456789012",
+    "driverHouseNumberStreet": "123 Updated Street",
+    "driverWard": "Updated Ward",
+    "driverDistrict": "Updated District",
+    "driverCityProvince": "Updated City",
+    "driverDrivingLicenseUri":"abc"
+}
+
+
+  ###
+GET http://localhost:5227/api/vnpay/CreatePaymentUrl?money=5000&description=Test+Payment
+
+###
+POST http://localhost:5227/api/Payment/CreatePaymentUrlVnpay
+Content-Type: application/json
+
+{
+  "OrderType": "other",
+  "Amount": 100000,
+  "OrderDescription": "Test",
+  "Name": "Test"
+}

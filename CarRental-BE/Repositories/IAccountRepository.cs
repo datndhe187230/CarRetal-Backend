@@ -6,6 +6,8 @@ namespace CarRental_BE.Repositories
     {
         Task<Account?> getAccountByEmailWithRole(string email);
 
-        Task<Account?> GetAccountById(Guid id);
+        Task<Account?> GetByIdAsync(Guid id);
+        Task UpdateAsync(Account account);
+
     }
 }

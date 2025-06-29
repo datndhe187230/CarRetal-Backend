@@ -1,4 +1,5 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Exceptions;
 using CarRental_BE.Models;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO.User;
@@ -42,7 +43,7 @@ namespace CarRental_BE.Controllers
 
 
         [HttpPut("profile/{id}")]
-        public async Task<ApiResponse<object>> UpdateUserProfile(Guid id, [FromBody] UserUpdateDTO dto)
+        public async Task<ApiResponse<object>> UpdateUserProfile(Guid id, [FromForm] UserUpdateDTO dto)
         {
             if (!ModelState.IsValid)
             {
@@ -61,6 +62,10 @@ namespace CarRental_BE.Controllers
                 }
 
                 return new ApiResponse<object>(200, "User profile updated successfully", result);
+            }
+            catch (EmailExistException ex)
+            {
+                return new ApiResponse<object>(400, "Email already exists", ex.Message);
             }
             catch (Exception ex)
             {
