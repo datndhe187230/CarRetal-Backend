@@ -1,5 +1,6 @@
-﻿using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
+using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Models.VO.User;
 
 public interface IBookingService
