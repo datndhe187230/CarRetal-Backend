@@ -51,6 +51,34 @@ namespace CarRental_BE.Controllers
             var paginatedResponse = new PaginationResponse<BookingVO>(bookings, page, pageSize, totalCount);
             return Ok(new ApiResponse<PaginationResponse<BookingVO>>(200, "Success", paginatedResponse));
         }
+        [HttpPut("{bookingNumber}/cancel")]
+        //task,async bat dong bo
+        public async Task<IActionResult> CancelBooking(string bookingNumber)
+        {
+            var result = await _bookingService.CancelBookingAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+
+            return Ok(new ApiResponse<string>(200, "Booking cancelled successfully"));
+        }
+        [HttpPut("{bookingNumber}/confirm-pickup")]
+        public async Task<IActionResult> ConfirmPickup(string bookingNumber)
+        {
+            var result = await _bookingService.ConfirmPickupAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+
+            return Ok(new ApiResponse<string>(200, "Pick-up successfully"));
+        }
+        [HttpPut("{bookingNumber}/return")]
+        public async Task<IActionResult> ReturnCar(string bookingNumber)
+        {
+            var result = await _bookingService.ReturnCarAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Return processed successfully"));
+        }
+
 
         [HttpGet("detail/{bookingNumber}")]
         public async Task<ActionResult<ApiResponse<BookingDetailVO>>> GetBookingById(string bookingNumber)

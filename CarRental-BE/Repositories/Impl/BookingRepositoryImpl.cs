@@ -32,12 +32,11 @@ namespace CarRental_BE.Repositories.Impl
                                  .ToListAsync();
         }
 
-        public async Task<Booking?> GetBookingByNumberAsync(string bookingNumber)
-        {
-            return await _context.Bookings
+        public async Task<Booking?> GetByBookingNumberAsync(string bookingNumber) => await _context.Bookings
                                  .Include(b => b.Car)
+                                 .Include(b => b.Account).ThenInclude(a => a.Wallet)
+
                                  .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
-        }
         public async Task<(List<Booking>, int)> GetBookingsWithPagingAsync(int page, int pageSize)
         {
             var query = _context.Bookings
@@ -54,6 +53,12 @@ namespace CarRental_BE.Repositories.Impl
 
             return (items, totalCount);
         }
+        public async Task UpdateAsync(Booking booking)
+        {
+            _context.Bookings.Update(booking);
+            await _context.SaveChangesAsync();
+        }
+
 
         public async Task<Booking?> GetBookingByBookingIdAsync(string id)
         {

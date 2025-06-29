@@ -1,4 +1,7 @@
-﻿using CarRental_BE.Models.DTO;
+namespace CarRental_BE.Models.Entities;
+
+using CarRental_BE.Exceptions;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Mapper;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Models.VO.User;
@@ -9,10 +12,22 @@ using CarRental_BE.Services;
 public class BookingServiceImpl : IBookingService
 {
     private readonly IBookingRepository _bookingRepository;
+    private readonly IAccountRepository _accountRepository;
+    private readonly ICarRepository _carRepository;
+    private readonly IEmailService _emailService;
 
-    public BookingServiceImpl(IBookingRepository bookingRepository)
+    public BookingServiceImpl(
+        IBookingRepository bookingRepository,
+        IAccountRepository accountRepository,
+   
+        ICarRepository carRepository,
+    
+        IEmailService emailService)
     {
         _bookingRepository = bookingRepository;
+        _accountRepository = accountRepository;
+        _carRepository = carRepository;
+        _emailService = emailService;
     }
 
     public async Task<List<BookingVO>> GetAllBookingsAsync()
@@ -31,6 +46,51 @@ public class BookingServiceImpl : IBookingService
         var voList = entities.Select(BookingMapper.ToBookingVO).ToList();
         return (voList, totalCount);
     }
+    public async Task<(bool Success, string Message)> CancelBookingAsync(string bookingNumber)
+    {
+        // Lấy thông tin booking từ repository
+        var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
+        if (booking == null || booking.Status?.ToLower() == "cancelled")
+            return (false, "Invalid or already cancelled booking");
+
+        // Cập nhật trạng thái huỷ
+        booking.Status = "cancelled";
+        await _bookingRepository.UpdateAsync(booking);
+
+        // Hoàn tiền đặt cọc vào ví khách hàng
+        if (booking.AccountId.HasValue)
+        {
+            var customer = await _accountRepository.GetByIdAsync(booking.AccountId.Value);
+            if (customer?.Wallet != null && booking.Deposit.HasValue)
+            {
+                customer.Wallet.Balance += booking.Deposit.Value;
+                await _accountRepository.UpdateAsync(customer);
+            }
+        }
+
+        // Gửi email thông báo tới chủ xe
+        var car = await _carRepository.GetByIdAsync(booking.CarId);
+        if (car != null)
+        {
+            var owner = await _accountRepository.GetByIdAsync(car.AccountId);
+            if (owner != null)
+            {
+                string subject = "Booking Cancelled";
+                string body = GenerateCancelBookingEmailContent(booking, owner); 
+                await _emailService.SendEmailAsync(owner.Email, subject, body);
+            }
+        }
+
+        return (true, "Cancelled successfully");
+    }
+    private string GenerateCancelBookingEmailContent(Booking booking, Account owner)
+    {
+        return $@"
+        <h3>Booking Cancelled</h3>
+        <p>Hello {owner.Email},</p>
+        <p>The booking <strong>{booking.BookingNumber}</strong> has been cancelled by the customer.</p>
+        <p>Please check your dashboard for more details.</p>";
+    }
     public async Task<BookingDetailVO?> GetBookingByBookingIdAsync(string id)
     {
         var entity = await _bookingRepository.GetBookingByBookingIdAsync(id);
@@ -43,4 +103,80 @@ public class BookingServiceImpl : IBookingService
         var updatedBooking = await _bookingRepository.UpdateBookingAsync(bookingNumber, bookingDto);
         return updatedBooking != null ? BookingMapper.ToBookingDetailVO(updatedBooking) : null;
     }
+
+    public async Task<(bool Success, string Message)> ConfirmPickupAsync(string bookingNumber)
+    {
+        var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
+        if (booking == null)
+            return (false, "Booking not found");
+
+        if (booking.Status?.ToLower() != "confirmed")
+            return (false, "Only confirmed bookings can be picked up");
+
+        booking.Status = "in_progress";
+        await _bookingRepository.UpdateAsync(booking);
+
+        return (true, "Booking marked as in progress");
+    }
+    public async Task<(bool Success, string Message)> ReturnCarAsync(string bookingNumber)
+    {
+        var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
+        if (booking == null)
+            return (false, "Booking not found");
+
+        if (booking.Status?.ToLower() != "in_progress")
+            return (false, "Only in-progress bookings can be returned");
+
+        var pickup = booking.PickUpTime ?? DateTime.UtcNow;
+        var dropoff = booking.DropOffTime ?? DateTime.UtcNow;
+        var days = (dropoff.Date - pickup.Date).Days + 1;
+        var totalAmount = (booking.BasePrice ?? 0) * days;
+        var deposit = booking.Deposit ?? 0;
+
+        var customer = await _accountRepository.GetByIdAsync(booking.AccountId!.Value);
+        if (customer?.Wallet == null)
+            return (false, "Customer wallet not found");
+
+        if (totalAmount > deposit)
+        {
+            var diff = totalAmount - deposit;
+            if (customer.Wallet.Balance < diff)
+            {
+                booking.Status = "pending_payment";
+                await _bookingRepository.UpdateAsync(booking);
+                return (false, "ME012: Your wallet doesn’t have enough balance. Please top-up your wallet and try again.");
+            }
+
+            customer.Wallet.Balance -= diff;
+            await _accountRepository.UpdateAsync(customer);
+        }
+        else if (deposit > totalAmount)
+        {
+            var refund = deposit - totalAmount;
+            customer.Wallet.Balance += refund;
+            await _accountRepository.UpdateAsync(customer);
+        }
+
+        booking.Status = "completed";
+        await _bookingRepository.UpdateAsync(booking);
+
+        var car = booking.Car ?? await _carRepository.GetByIdAsync(booking.CarId);
+        var owner = car != null ? await _accountRepository.GetByIdAsync(car.AccountId) : null;
+
+        if (owner != null)
+        {
+            string subject = "Car Returned";
+            string body = $@"
+        <h3>Car Returned</h3>
+        <p>Hello {owner.Email},</p>
+        <p>Booking <strong>{booking.BookingNumber}</strong> has been returned successfully by the customer.</p>
+        <p>Please check your dashboard for more details.</p>";
+            await _emailService.SendEmailAsync(owner.Email, subject, body);
+        }
+
+        return (true, "Return completed successfully");
+    }
+
+
+
 }

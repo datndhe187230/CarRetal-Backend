@@ -1,15 +1,16 @@
 {
   "profiles": {
-    //"CarRental_BE": {
-    //  "commandName": "Project",
-    //  "exceptions": {
-    //    "ignore": [
-    //      {
-    //        "type": "CarRental_BE.Exceptions.AppException",
-    //        "module": "CarRental-BE.dll"
-    //      }
-    //    ]
-    //  },
+    "CarRental_BE": {
+      "commandName": "Project",
+      "exceptions": {
+        "ignore": [
+          {
+            "type": "CarRental_BE.Exceptions.AppException",
+            "module": "CarRental-BE.dll"
+          }
+        ]
+      }
+    },
     "http": {
       "commandName": "Project",
       "environmentVariables": {
