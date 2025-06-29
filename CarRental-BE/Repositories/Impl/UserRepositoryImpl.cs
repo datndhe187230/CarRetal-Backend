@@ -46,7 +46,7 @@ namespace CarRental_BE.Repositories.Impl
                 .Include(u => u.IdNavigation)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (user == null) throw new UserNotFound2Exception();
+            if (user == null) throw new UserNotFoundException();
 
             // Update UserProfile fields
             user.FullName = dto.FullName;
