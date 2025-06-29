@@ -3,12 +3,14 @@ using CarRental_BE.Models;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO.User;
 using CarRental_BE.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarRental_BE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;

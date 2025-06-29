@@ -5,12 +5,13 @@ using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Authorization;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize(Roles = "customer")]
+[Authorize]
 public class CarController : ControllerBase
 {
     private readonly CarRentalContext _context;
@@ -19,6 +20,7 @@ public class CarController : ControllerBase
     //Dependency Injection
     public CarController(CarRentalContext context, ICarService carService)
     {
+
         _context = context;
         _carService = carService;
     }
@@ -66,7 +68,6 @@ public class CarController : ControllerBase
         }
     }
 
-
     //Hung
     [HttpGet("{accountId}/paginated")]
     public async Task<ApiResponse<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
@@ -88,9 +89,6 @@ public class CarController : ControllerBase
                 message: "Connection successful",
                 data: result
                 );
-
-
-
             return response;
         }
         catch (Exception ex)
@@ -150,6 +148,55 @@ public class CarController : ControllerBase
             return new ApiResponse<CarVO_CarDetail>(
                 status: 500,
                 message: $"Error retrieving car details: {ex.Message}",
+                data: null);
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpGet("search")]
+    public async Task<ApiResponse<PaginationResponse<CarSearchVO>>> SearchCar([FromQuery] SearchDTO searchDTO, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var requestPage = new PaginationRequest
+        {
+            PageNumber = page,
+            PageSize = pageSize
+        };
+
+        PaginationResponse<CarSearchVO> list = await _carService.SearchCar(searchDTO, requestPage);
+
+        var response = new ApiResponse<PaginationResponse<CarSearchVO>>(
+            status: 200,
+            message: "Search functionality is not implemented yet",
+            data: list
+        );
+
+        return response;
+    }
+
+    [HttpPost("add")]
+    [Authorize(Roles = "admin, car_owner")]
+    public async Task<ApiResponse<CarVO_CarDetail>> AddCar([FromForm] AddCarDTO addCarDTO)
+    {
+        try
+        {
+            var newCar = await _carService.AddCar(addCarDTO);
+            if (newCar == null)
+            {
+                return new ApiResponse<CarVO_CarDetail>(
+                    status: 400,
+                    message: "Failed to add car",
+                    data: null);
+            }
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 201,
+                message: "Car added successfully",
+                data: newCar);
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<CarVO_CarDetail>(
+                status: 500,
+                message: $"Error adding car: {ex.Message}",
                 data: null);
         }
     }

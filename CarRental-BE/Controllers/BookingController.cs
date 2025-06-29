@@ -1,0 +1,45 @@
+﻿using CarRental_BE.Data;
+using CarRental_BE.Models.Common;
+using CarRental_BE.Models.VO;
+using CarRental_BE.Services;
+using Microsoft.AspNetCore.Mvc;
+
+namespace CarRental_BE.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class BookingController : ControllerBase
+    {
+        private readonly IBookingService _bookingService;
+
+        public BookingController(IBookingService bookingService)
+        {
+            _bookingService = bookingService;
+        }
+
+        // Get all bookings (for admin use or debugging)
+        [HttpGet("all")]
+        public async Task<ActionResult<ApiResponse<List<BookingVO>>>> GetAllBookings()
+        {
+            var data = await _bookingService.GetAllBookingsAsync();
+            return Ok(new ApiResponse<List<BookingVO>>(200, "Success", data));
+        }
+
+        // Get bookings by account ID (user-specific)
+        [HttpGet("{accountId}")]
+        public async Task<ActionResult<ApiResponse<List<BookingVO>>>> GetBookingsByAccountId(Guid accountId)
+        {
+            var data = await _bookingService.GetBookingsByAccountIdAsync(accountId);
+            return Ok(new ApiResponse<List<BookingVO>>(200, "Success", data));
+        }
+
+        // Get bookings with pagination (admin view)
+        [HttpGet]
+        public async Task<ActionResult<ApiResponse<PaginationResponse<BookingVO>>>> GetBookings(int page = 1, int pageSize = 5)
+        {
+            var (bookings, totalCount) = await _bookingService.GetBookingsWithPagingAsync(page, pageSize);
+            var paginatedResponse = new PaginationResponse<BookingVO>(bookings, page, pageSize, totalCount);
+            return Ok(new ApiResponse<PaginationResponse<BookingVO>>(200, "Success", paginatedResponse));
+        }
+    }
+}

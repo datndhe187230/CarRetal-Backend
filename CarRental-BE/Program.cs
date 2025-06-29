@@ -7,13 +7,18 @@ using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
 using CarRental_BE.Services.Impl;
+using CloudinaryDotNet;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +39,32 @@ builder.Services.AddScoped<ICarRepository, CarRepositoryImpl>();
 builder.Services.AddScoped<ICarService, CarServiceImpl>();
 builder.Services.AddScoped<IEmailService, EmailServiceImpl>();
 builder.Services.AddScoped<IRedisService, RedisServiceImpl>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryServiceImpl>();
+builder.Services.AddScoped<IBookingRepository, BookingRepositoryImpl>();
+builder.Services.AddScoped<IBookingService, BookingServiceImpl>();
+
+//Configure Elasticsearch settings (local)
+var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
+    .CertificateFingerprint("d14784d90529b16a164b3e178eb770b02664afb1322a3225ca4145eef7d6c270")
+    .Authentication(new BasicAuthentication("elastic", "MRil5d*w9Q__xNGV+OFQ"))
+    .EnableDebugMode()
+    .PrettyJson()
+    .RequestTimeout(TimeSpan.FromMinutes(2));
+
+var client = new ElasticsearchClient(settings);
+
+//Configure Cloudinary settings
+var cloudName = builder.Configuration.GetValue<string>("CloudinarySettings:CloudName");
+var apiKey = builder.Configuration.GetValue<string>("CloudinarySettings:ApiKey");
+var apiSecret = builder.Configuration.GetValue<string>("CloudinarySettings:ApiSecret");
+
+if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
+{
+    throw new ArgumentException("Please specify Cloudinary account details!");
+}
+
+builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
+
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(
@@ -63,6 +94,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(configuration);
 });
 
+//Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -110,6 +142,22 @@ builder.Services.AddAuthentication(options =>
                 }
 
                 return Task.CompletedTask;
+            },
+
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+
+                var result = JsonSerializer.Serialize(new
+                {
+                    code = 401,
+                    message = "Unauthorized. Token is missing, invalid, or expired."
+                });
+
+                return context.Response.WriteAsync(result);
             }
         };
     });
@@ -126,7 +174,24 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+//booking
 
+
+app.Use(async (context, next) =>
+{
+    await next();
+
+    if (context.Response.StatusCode == 403)
+    {
+        context.Response.ContentType = "application/json";
+        var result = JsonSerializer.Serialize(new
+        {
+            code = 403,
+            message = "Forbidden: You do not have permission to access this resource."
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -134,6 +199,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+//booking
 
 
 

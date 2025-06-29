@@ -1,4 +1,5 @@
-﻿using CarRental_BE.Models.Entities;
+﻿using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.Entities;
 
 namespace CarRental_BE.Repositories
 {
@@ -10,6 +11,9 @@ namespace CarRental_BE.Repositories
             int pageSize);
 
         Task<Car?> GetByIdWithBookings(Guid carId);
+        Task<(List<Car> cars, int totalCount)> SearchCar(SearchDTO searchDTO, int pageNumber, int pageSize);
+
+        Task<Car?> AddCar(AddCarDTO addCarDTO);
 
         Task<Car?> GetCarById(Guid carId);
 
