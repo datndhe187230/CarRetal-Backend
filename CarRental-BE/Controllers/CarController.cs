@@ -70,6 +70,7 @@ public class CarController : ControllerBase
 
     //Hung
     [HttpGet("{accountId}/paginated")]
+    [Authorize(Roles = "car_owner")]
     public async Task<ApiResponse<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
         [FromQuery] int PageNumber = 1,
         [FromQuery] int PageSize = 10)
@@ -103,6 +104,7 @@ public class CarController : ControllerBase
     }
 
     [HttpPut("edit-car/{carId}")]
+    [Authorize(Roles = "car_owner")]
     public async Task<ApiResponse<CarVO_Full>> UpdateCar(Guid carId, [FromBody] CarUpdateDTO updateDto)
     {
         try
