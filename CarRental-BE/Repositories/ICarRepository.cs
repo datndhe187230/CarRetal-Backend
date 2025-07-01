@@ -18,5 +18,6 @@ namespace CarRental_BE.Repositories
 
         Task<Car?> AddCar(AddCarDTO addCarDTO);
 
+        Task<List<CarSummaryDTO>> GetAllWithFeedback();
     }
 }
