@@ -300,5 +300,33 @@ namespace CarRental_BE.Repositories.Impl
 
             return (cars: cars, totalCount: totalCount);
         }
+
+        public async Task<List<CarSummaryDTO>> GetAllWithFeedback()
+        {
+            var cars = await _context.Cars
+                .Include(c => c.Bookings)
+                    .ThenInclude(b => b.Feedback)
+                .Select(c => new CarSummaryDTO
+                {
+                    Id = c.Id,
+                    Brand = c.Brand,
+                    Model = c.Model,
+                    Color = c.Color,
+                    BasePrice = c.BasePrice,
+                    Deposit = c.Deposit,
+                    Status = c.Status,
+                    Address = c.HouseNumberStreet + ", " + c.Ward + ", " + c.District + ", " + c.CityProvince,
+                    AverageRating = c.Bookings
+                        .Where(b => b.Feedback != null && b.Feedback.Rating.HasValue)
+                        .Select(b => (double?)b.Feedback.Rating.Value)
+                        .DefaultIfEmpty()
+                        .Average()
+                })
+                .ToListAsync();
+
+            return cars;
+        }
+
+
     }
 }
