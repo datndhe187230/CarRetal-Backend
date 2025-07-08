@@ -1,4 +1,5 @@
-﻿using CarRental_BE.Data;
+﻿using CarRental_BE.Chatbot;
+using CarRental_BE.Data;
 using CarRental_BE.Middleware;
 using CarRental_BE.Models.Common;
 using CarRental_BE.Models.Entities;
@@ -53,6 +54,7 @@ builder.Services.AddScoped<ITransactionRepository, TransactionRepositoryImpl>();
 builder.Services.AddScoped<IDashboardService, DashboardServiceImpl>();
 builder.Services.AddScoped<IWalletRepository, WalletRepositoryImpl>();
 builder.Services.AddScoped<IWalletService, WalletServiceImpl>();
+builder.Services.AddScoped<IChatbotService, ChatbotServiceImpl>();
 
 //Configure Elasticsearch settings (local)
 var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
