@@ -1,6 +1,7 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
 using Microsoft.EntityFrameworkCore;
@@ -53,7 +54,7 @@ namespace CarRental_BE.Repositories.Impl
                 District = dto.District,
                 CityProvince = dto.CityProvince,
 
-                Status = "not_verified",
+                Status = CarStatus.NotVerified.ToString(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 AccountId = accountId
@@ -299,6 +300,35 @@ namespace CarRental_BE.Repositories.Impl
                 .ToListAsync();
 
             return (cars: cars, totalCount: totalCount);
+        }
+
+        public async Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(int pageNumber, int pageSize)
+        {
+            var query = _context.Cars
+                //.Where(c => c.Status == CarStatus.NotVerified.ToString())
+                .Where(c => c.Status == "not_verified")
+                .OrderByDescending(c => c.CreatedAt);
+
+            var totalCount = await query.CountAsync();
+
+            var cars = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (cars, totalCount);
+        }
+
+        public async Task VerifyCarInfo(Guid carId)
+        {
+            _context.Cars
+                .Where(c => c.Id == carId)
+                .ExecuteUpdate(c => c.SetProperty(car => car.Status, CarStatus.Verified.ToString())
+                .SetProperty(car => car.CertificateOfInspectionUriIsVerified, true)
+                .SetProperty(car => car.RegistrationPaperUriIsVerified, true)
+                .SetProperty(car => car.InsuranceUriIsVerified, true));
+
+            await _context.SaveChangesAsync();
         }
     }
 }
