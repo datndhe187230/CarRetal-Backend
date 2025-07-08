@@ -19,5 +19,11 @@ namespace CarRental_BE.Repositories
         Task<Car?> AddCar(AddCarDTO addCarDTO);
 
         Task<List<CarSummaryDTO>> GetAllWithFeedback();
+        Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(
+            int pageNumber, 
+            int pageSize);
+
+        Task VerifyCarInfo(Guid carId);
+
     }
 }
