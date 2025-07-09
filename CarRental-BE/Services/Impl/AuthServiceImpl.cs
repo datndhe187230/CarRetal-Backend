@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using CarRental_BE.Helpers;
 
 namespace CarRental_BE.Services.Impl
 {
@@ -43,7 +44,8 @@ namespace CarRental_BE.Services.Impl
                 throw new UserNotFoundException(loginDto.Email);
             }
             //else if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, userAccount.Password))
-            else if (!String.Equals(loginDto.Password, userAccount.Password, StringComparison.Ordinal))
+            // else if (!String.Equals(loginDto.Password, userAccount.Password, StringComparison.Ordinal))
+            else if (!PasswordHelper.VerifyPassword(loginDto.Password, userAccount.Password))
             {
                 throw new UnauthorizedException("Invalid password.");
             }

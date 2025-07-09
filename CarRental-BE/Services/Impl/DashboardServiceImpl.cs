@@ -134,5 +134,15 @@ namespace CarRental_BE.Services.Impl
         {
             await _carRepository.VerifyCarInfo(carId);
         }
+        public async Task<PaginationResponse<CarVO_Full>> GetCarsByAccountIdAsync(Guid accountId, PaginationRequest paginationRequest)
+        {
+            var pageNumber = paginationRequest.PageNumber;
+            var pageSize = paginationRequest.PageSize;
+
+            var (cars, totalCount) = await _carRepository.GetAccountId(accountId, pageNumber, pageSize);
+            var carVOs = _mapper.Map<List<CarVO_Full>>(cars);
+
+            return new PaginationResponse<CarVO_Full>(carVOs, pageNumber, pageSize, totalCount);
+        }
     }
 }
