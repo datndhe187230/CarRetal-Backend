@@ -24,6 +24,6 @@ namespace CarRental_BE.Repositories
             int pageSize);
 
         Task VerifyCarInfo(Guid carId);
-
+        
     }
 }

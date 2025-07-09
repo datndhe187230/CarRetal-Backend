@@ -170,5 +170,20 @@ namespace CarRental_BE.Controllers
             await _dashboardService.ToggleCarVerificationStatus(carId);
             return Ok(new ApiResponse<string>(200, "Car verification status toggled successfully", "Car verification status toggled successfully"));
         }
+        [HttpGet("cars/account/{accountId}/paginated")]
+        public async Task<ActionResult<ApiResponse<PaginationResponse<CarVO_Full>>>> GetCarsByAccountId(
+    Guid accountId,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            var paginationRequest = new PaginationRequest
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var paginatedCars = await _dashboardService.GetCarsByAccountIdAsync(accountId, paginationRequest);
+            return Ok(new ApiResponse<PaginationResponse<CarVO_Full>>(200, "Paginated cars by account retrieved successfully", paginatedCars));
+        }
     }
 }

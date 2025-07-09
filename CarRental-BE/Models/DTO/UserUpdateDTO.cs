@@ -13,7 +13,7 @@ namespace CarRental_BE.Models.DTO
         [StringLength(20)]
         public string? PhoneNumber { get; set; }
 
-        [StringLength(20)]
+        [StringLength(12)]
         public string? NationalId { get; set; }
 
         public IFormFile? DrivingLicenseUri { get; set; }

@@ -19,5 +19,6 @@ namespace CarRental_BE.Services
         Task<PaginationResponse<CarVO_Full>> GetAllUnverifiedCarsAsync(PaginationRequest paginationRequest);
         Task ToggleAccountStatus(Guid accountId);
         Task ToggleCarVerificationStatus(Guid carId);
+        Task<PaginationResponse<CarVO_Full>> GetCarsByAccountIdAsync(Guid accountId, PaginationRequest paginationRequest);
     }
 }
