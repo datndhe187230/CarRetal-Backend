@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Mapper;
 using CarRental_BE.Models.VO.AdminManagement;
 using CarRental_BE.Models.VO.Car;
@@ -114,12 +115,18 @@ namespace CarRental_BE.Services.Impl
             return new PaginationResponse<AccountVO>(accountVOs, pageNumber, pageSize, totalCount);
         }
 
-        public async Task<PaginationResponse<CarVO_Full>> GetAllUnverifiedCarsAsync(PaginationRequest paginationRequest)
+        public async Task<PaginationResponse<CarVO_Full>> GetAllUnverifiedCarsAsync(
+    PaginationRequest paginationRequest,
+    CarFilterDTO? filters = null)
         {
             var pageNumber = paginationRequest.PageNumber;
             var pageSize = paginationRequest.PageSize;
 
-            var (cars, totalCount) = await _carRepository.GetAllUnverifiedCarsAsync(pageNumber, pageSize);
+            var (cars, totalCount) = await _carRepository.GetAllUnverifiedCarsAsync(
+                pageNumber,
+                pageSize,
+                filters);
+
             var carVOs = _mapper.Map<List<CarVO_Full>>(cars);
 
             return new PaginationResponse<CarVO_Full>(carVOs, pageNumber, pageSize, totalCount);
@@ -144,5 +151,12 @@ namespace CarRental_BE.Services.Impl
 
             return new PaginationResponse<CarVO_Full>(carVOs, pageNumber, pageSize, totalCount);
         }
+        public async Task<PaginationResponse<CarVO_Full>> GetFilteredCarsByAccountId(Guid accountId, PaginationRequest paginationRequest, CarFilterDTO filters)
+        {
+            var (cars, totalCount) = await _carRepository.GetAccountCarsFilteredAsync(accountId, paginationRequest.PageNumber, paginationRequest.PageSize, filters);
+            var carVOs = _mapper.Map<List<CarVO_Full>>(cars);
+            return new PaginationResponse<CarVO_Full>(carVOs, paginationRequest.PageNumber, paginationRequest.PageSize, totalCount);
+        }
+
     }
 }
