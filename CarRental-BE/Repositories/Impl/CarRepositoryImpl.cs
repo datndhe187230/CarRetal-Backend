@@ -330,15 +330,56 @@ namespace CarRental_BE.Repositories.Impl
 
 
 
-        public async Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(int pageNumber, int pageSize)
+        public async Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(
+    int pageNumber,
+    int pageSize,
+    CarFilterDTO? filters = null)
         {
             var query = _context.Cars
-                //.Where(c => c.Status == CarStatus.NotVerified.ToString())
-                .Where(c => c.Status == "not_verified")
-                .OrderByDescending(c => c.CreatedAt);
+                .Where(c => c.Status == "not_verified");
+
+            // Áp dụng bộ lọc nếu có
+            if (filters != null)
+            {
+                if (!string.IsNullOrEmpty(filters.Brand))
+                {
+                    query = query.Where(c => c.Brand.Contains(filters.Brand));
+                }
+
+                if (!string.IsNullOrEmpty(filters.Search))
+                {
+                    var search = filters.Search.ToLower();
+                    query = query.Where(c =>
+                        (!string.IsNullOrEmpty(c.Brand) && c.Brand.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(c.Model) && c.Model.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(c.Description) && c.Description.ToLower().Contains(search))
+                    );
+                }
+
+                // Sắp xếp
+                if (!string.IsNullOrEmpty(filters.SortBy))
+                {
+                    bool ascending = string.Equals(filters.SortDirection, "asc", StringComparison.OrdinalIgnoreCase);
+
+                    query = filters.SortBy.ToLower() switch
+                    {
+                        "brand" => ascending ? query.OrderBy(c => c.Brand) : query.OrderByDescending(c => c.Brand),
+                        "model" => ascending ? query.OrderBy(c => c.Model) : query.OrderByDescending(c => c.Model),
+                        "price" => ascending ? query.OrderBy(c => c.BasePrice) : query.OrderByDescending(c => c.BasePrice),
+                        _ => query.OrderByDescending(c => c.CreatedAt)
+                    };
+                }
+                else
+                {
+                    query = query.OrderByDescending(c => c.CreatedAt);
+                }
+            }
+            else
+            {
+                query = query.OrderByDescending(c => c.CreatedAt);
+            }
 
             var totalCount = await query.CountAsync();
-
             var cars = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -358,6 +399,52 @@ namespace CarRental_BE.Repositories.Impl
 
             await _context.SaveChangesAsync();
         }
-         
+        public async Task<(List<Car> cars, int totalCount)> GetAccountCarsFilteredAsync(Guid accountId, int pageNumber, int pageSize, CarFilterDTO filters)
+        {
+            var query = _context.Cars
+                .Where(c => c.AccountId == accountId);
+
+            if (!string.IsNullOrEmpty(filters.Brand))
+            {
+                query = query.Where(c => c.Brand.Contains(filters.Brand));
+            }
+
+            if (!string.IsNullOrEmpty(filters.Search))
+            {
+                var search = filters.Search.ToLower();
+                query = query.Where(c =>
+                    (!string.IsNullOrEmpty(c.Brand) && c.Brand.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(c.Model) && c.Model.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(c.Description) && c.Description.ToLower().Contains(search))
+                );
+            }
+
+            // Sorting
+            if (!string.IsNullOrEmpty(filters.SortBy))
+            {
+                bool ascending = string.Equals(filters.SortDirection, "asc", StringComparison.OrdinalIgnoreCase);
+
+                query = filters.SortBy.ToLower() switch
+                {
+                    "brand" => ascending ? query.OrderBy(c => c.Brand) : query.OrderByDescending(c => c.Brand),
+                    "model" => ascending ? query.OrderBy(c => c.Model) : query.OrderByDescending(c => c.Model),
+                    "price" => ascending ? query.OrderBy(c => c.BasePrice) : query.OrderByDescending(c => c.BasePrice),
+                    _ => query.OrderByDescending(c => c.CreatedAt)
+                };
+            }
+            else
+            {
+                query = query.OrderByDescending(c => c.CreatedAt);
+            }
+
+            var totalCount = await query.CountAsync();
+            var cars = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (cars, totalCount);
+        }
+
     }
 }

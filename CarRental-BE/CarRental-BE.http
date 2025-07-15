@@ -145,3 +145,9 @@ Content-Type: application/json
   "OrderDescription": "Test",
   "Name": "Test"
 }
+###
+GET http://localhost:5227/api/Dashboard/cars/account/5c22f1b7-454c-48aa-9717-48341131e566/paginated?pageNumber=1&pageSize=10&sortBy=createdAt&sortDirection=desc&brand=Toyota&search=innova
+Accept: application/json
+###
+GET http://localhost:5227/api/Dashboard/cars/account/5c22f1b7-454c-48aa-9717-48341131e566/paginated?pageNumber=1&pageSize=10
+Accept: application/json

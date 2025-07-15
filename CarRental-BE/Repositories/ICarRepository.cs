@@ -20,10 +20,12 @@ namespace CarRental_BE.Repositories
 
         Task<List<CarSummaryDTO>> GetAllWithFeedback();
         Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(
-            int pageNumber, 
-            int pageSize);
+        int pageNumber,
+        int pageSize,
+        CarFilterDTO? filters = null); // Thêm tham số filters
 
         Task VerifyCarInfo(Guid carId);
-        
+        Task<(List<Car> cars, int totalCount)> GetAccountCarsFilteredAsync(Guid accountId, int pageNumber, int pageSize, CarFilterDTO filters);
+
     }
 }
