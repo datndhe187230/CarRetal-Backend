@@ -26,6 +26,6 @@ namespace CarRental_BE.Repositories
 
         Task VerifyCarInfo(Guid carId);
         Task<(List<Car> cars, int totalCount)> GetAccountCarsFilteredAsync(Guid accountId, int pageNumber, int pageSize, CarFilterDTO filters);
-
+        Task<bool> CheckCarBookingStatus(Guid carId, DateTime pickupDate, DateTime dropoffDate);
     }
 }

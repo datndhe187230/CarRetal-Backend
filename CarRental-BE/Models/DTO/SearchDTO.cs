@@ -23,6 +23,7 @@ namespace CarRental_BE.Models.DTO
 
         public string? SearchQuery { get; set; } // Optional
 
+        public string? SortBy { get; set; } // Optional, e.g., "price"
+        public string? Order { get; set; } // Optional, e.g., "asc" or "desc"
     }
-
 }

@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Chatbot;
 using CarRental_BE.Data;
+using CarRental_BE.Helpers;
 using CarRental_BE.Middleware;
 using CarRental_BE.Models.Common;
 using CarRental_BE.Models.Entities;
@@ -21,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,7 +107,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     var configuration = builder.Configuration.GetConnectionString("Redis");
     return ConnectionMultiplexer.Connect(configuration);
 });
-
 //Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {

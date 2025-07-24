@@ -78,8 +78,8 @@ namespace CarRental_BE.Repositories.Impl
                  throw new BookingNotFoundException(bookingNumber);
 
             // Check if booking status allows editing
-            if (!booking.Status.Equals(BookingStatusEnum.PendingDeposit.ToString(), StringComparison.OrdinalIgnoreCase) &&
-                !booking.Status.Equals(BookingStatusEnum.Confirmed.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!booking.Status.Equals(BookingStatusEnum.pending_deposit.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                !booking.Status.Equals(BookingStatusEnum.confirmed.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 throw new BookingEditException(booking.Status);
             }
@@ -135,7 +135,7 @@ namespace CarRental_BE.Repositories.Impl
         {
             return await _context.Bookings
                 .Where(b => b.CreatedAt.HasValue && b.CreatedAt.Value.Year == year && b.Status == "Completed")
-                .GroupBy(b => b.CreatedAt.Value.Month)
+                .GroupBy(b => b.CreatedAt!.Value.Month) // Use the null-forgiving operator '!' to suppress the warning
                 .Select(g => new MonthlyRevenueVO
                 {
                     Month = g.Key.ToString(),
@@ -183,6 +183,24 @@ namespace CarRental_BE.Repositories.Impl
                     Count = g.Count()
                 })
                 .ToListAsync();
+        }
+
+        public async Task<int> GetNextBookingSequenceForDateAsync(string datePart)
+        {
+            return await _context.Bookings
+                .Where(b => b.BookingNumber.StartsWith(datePart)).CountAsync() + 1;
+        }
+
+        public async Task<Booking?> CreateBookingAsync(Booking newBooking)
+        {
+            _context.Bookings.Add(newBooking);
+            await _context.SaveChangesAsync();
+            return newBooking;
+        }
+
+        public async Task<List<Booking>> GetBookingsByCarId(Guid carId)
+        {
+            return await _context.Bookings.Where(b => b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
         }
     }
 }
