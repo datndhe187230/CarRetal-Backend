@@ -54,9 +54,9 @@
 
         public string? Color { get; set; }
 
-        public long BasePrice { get; set; }
+        public long? BasePrice { get; set; }
 
-        public long Deposit { get; set; }
+        public long? Deposit { get; set; }
 
         public int? NumberOfSeats { get; set; }
 

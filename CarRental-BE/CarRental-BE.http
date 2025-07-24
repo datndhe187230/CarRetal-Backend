@@ -64,18 +64,10 @@ GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86
 Content-Type: application/json
 Accept: application/json
 }
-
-##Lấy trang đầu tiên, 10 records mỗi trang
-###
-GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86/paginated?pageNumber=1&pageSize=10
-
-#Lấy trang thứ 2, 5 records mỗi trang
-###
-GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86/paginated?pageNumber=2&pageSize=5
-
+ 
 #default pageNumber=1, pageSize=10
 ###
-GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86/paginated
+GET http://localhost:5227/api/Car/76C67141-FAAB-4375-AD47-0DAC25551FEC/paginated
 
 
 ###
@@ -105,17 +97,50 @@ Content-Type: application/json
 
 
 ### lay status trên server
-PUT http://localhost:5227/api/Car/edit-car/9C5B209C-AD2D-421D-9F01-2609B5C1AE12
+Patch http://localhost:5227/api/Car/edit-car/DD63B6FF-0559-4084-B392-02EF2AC777C5
 Content-Type: application/json
 Accept: application/json
 
 {
-    "FuelConsumption": 6,
-    "Status": "verified"
+  "brand": "Toyota",
+  "model": "Vios 1.5G",
+  "color": "Black",
+  "basePrice": 550000,
+  "deposit": 1000000,
+  "numberOfSeats": 5,
+  "productionYear": 2022,
+  "mileage": 25000,
+  "fuelConsumption": 6.5,
+  "isGasoline": true,
+  "isAutomatic": true,
+  "termOfUse": "Cho thuê theo ngày hoặc tuần",
+  "additionalFunction": "Camera lùi, Cảm biến va chạm, Cruise Control",
+  "description": "Xe còn mới 95%, nội thất sạch sẽ, máy chạy êm.",
+  "licensePlate": "30G-123.45",
+  "houseNumberStreet": "123 Đường Lê Duẩn",
+  "ward": "Phường 7",
+  "district": "Quận 3",
+  "cityProvince": "TP. Hồ Chí Minh",
+  "carImageFront": "https://example.com/images/front.jpg",
+  "carImageBack": "https://example.com/images/back.jpg",
+  "carImageLeft": "https://example.com/images/left.jpg",
+  "carImageRight": "https://example.com/images/right.jpg",
+  "insuranceUri": "https://example.com/docs/insurance.pdf",
+  "insuranceUriIsVerified": true,
+  "registrationPaperUri": "https://example.com/docs/registration.pdf",
+  "registrationPaperUriIsVerified": true,
+  "certificateOfInspectionUri": "https://example.com/docs/inspection.pdf",
+  "certificateOfInspectionUriIsVerified": true,
+  "status": "verified",
+  "accountId": "a5bf45c7-2b2d-4a02-84d9-daa0455f42d8",
+  "createdAt": "2024-06-13T21:50:11",
+  "updatedAt": "2024-07-22T01:00:00",
+  "account": null,
+  "bookings": []
 }
 
 ###
-GET http://localhost:5227/api/Car/9C5B209C-AD2D-421D-9F01-2609B5C1AE12/detail
+GET http://localhost:5227/api/Car/8330d020-70b9-4e47-8924-6a900e697f6e/detail
 Accept: application/json
 ### Get all bookings (paging)
 GET http://localhost:5227/api/Booking?page=1&pageSize=5

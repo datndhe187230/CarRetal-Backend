@@ -103,7 +103,7 @@ public class CarController : ControllerBase
         }
     }
 
-    [HttpPut("edit-car/{carId}")]
+    [HttpPatch("edit-car/{carId}")]
     [Authorize(Roles = "car_owner")]
     public async Task<ApiResponse<CarVO_Full>> UpdateCar(Guid carId, [FromBody] CarUpdateDTO updateDto)
     {
@@ -121,7 +121,7 @@ public class CarController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new ApiResponse<CarVO_Full>(500, "Server error", null);
+            return new ApiResponse<CarVO_Full>(500, $"Server error: {ex.Message}", null);
         }
     }
 
