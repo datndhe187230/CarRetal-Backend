@@ -29,7 +29,7 @@ namespace CarRental_BE.Repositories.Impl
             return await _context.Bookings
                                  .Include(b => b.Car)
                                  .Where(b => b.AccountId == accountId)
-                                 .OrderBy(b => b.CreatedAt)
+                                 .OrderByDescending(b => b.CreatedAt)
                                  .ToListAsync();
         }
 

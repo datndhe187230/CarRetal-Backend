@@ -58,6 +58,8 @@ public static class BookingMapper
             PickUpTime = booking.PickUpTime,
             DropOffTime = booking.DropOffTime,
             AccountEmail = account?.Email,
+            PickUpLocation = booking?.PickUpLocation,
+            DropOffLocation = booking?.DropOffLocation,
 
             // Renter's information
             RenterFullName = userProfile?.FullName,
