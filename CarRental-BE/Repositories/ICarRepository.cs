@@ -18,6 +18,15 @@ namespace CarRental_BE.Repositories
 
         Task<Car?> AddCar(AddCarDTO addCarDTO);
 
+        Task<List<CarSummaryDTO>> GetAllWithFeedback();
+        Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(
+        int pageNumber,
+        int pageSize,
+        CarFilterDTO? filters = null); // Thêm tham số filters
+
+        Task VerifyCarInfo(Guid carId);
+        Task<(List<Car> cars, int totalCount)> GetAccountCarsFilteredAsync(Guid accountId, int pageNumber, int pageSize, CarFilterDTO filters);
+        Task<bool> CheckCarBookingStatus(Guid carId, DateTime pickupDate, DateTime dropoffDate);
         Task<Car?> GetCarById(Guid carId);
 
         Task<Car?> UpdateCar(Car car);

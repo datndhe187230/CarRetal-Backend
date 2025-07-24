@@ -1,4 +1,10 @@
-﻿using CarRental_BE.Models.VO.Statistic;
+﻿using AutoMapper;
+using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.Mapper;
+using CarRental_BE.Models.VO.AdminManagement;
+using CarRental_BE.Models.VO.Car;
+using CarRental_BE.Models.VO.Statistic;
 using CarRental_BE.Repositories;
 
 namespace CarRental_BE.Services.Impl
@@ -7,11 +13,17 @@ namespace CarRental_BE.Services.Impl
     {
         private readonly IBookingRepository _bookingRepository;
         private readonly ITransactionRepository _transactionRepository;
+        private readonly IAccountRepository _accountRepository;
+        private readonly ICarRepository _carRepository;
+        private readonly IMapper _mapper;
 
-        public DashboardServiceImpl(IBookingRepository bookingRepository, ITransactionRepository transactionRepository)
+        public DashboardServiceImpl(IBookingRepository bookingRepository, ITransactionRepository transactionRepository, IAccountRepository accountRepository, ICarRepository carRepository, IMapper mapper)
         {
             _bookingRepository = bookingRepository;
             _transactionRepository = transactionRepository;
+            _accountRepository = accountRepository;
+            _carRepository = carRepository;
+            _mapper = mapper;
         }
 
         public async Task<DashboardStatsVO> GetDashboardStatsAsync()
@@ -91,5 +103,60 @@ namespace CarRental_BE.Services.Impl
         {
             return await _transactionRepository.GetDailyTransactionsAsync(startDate, endDate);
         }
+
+        public async Task<PaginationResponse<AccountVO>> GetAccountsWithPagingAsync(PaginationRequest paginationRequest)
+        {
+            var pageNumber = paginationRequest.PageNumber;
+            var pageSize = paginationRequest.PageSize;
+
+            var (accounts, totalCount) = await _accountRepository.GetAccountsWithPagingAsync(pageNumber, pageSize);
+            var accountVOs = accounts.Select(AccountMapper.ToAccountVO).ToList();
+
+            return new PaginationResponse<AccountVO>(accountVOs, pageNumber, pageSize, totalCount);
+        }
+
+        public async Task<PaginationResponse<CarVO_Full>> GetAllUnverifiedCarsAsync(
+    PaginationRequest paginationRequest,
+    CarFilterDTO? filters = null)
+        {
+            var pageNumber = paginationRequest.PageNumber;
+            var pageSize = paginationRequest.PageSize;
+
+            var (cars, totalCount) = await _carRepository.GetAllUnverifiedCarsAsync(
+                pageNumber,
+                pageSize,
+                filters);
+
+            var carVOs = _mapper.Map<List<CarVO_Full>>(cars);
+
+            return new PaginationResponse<CarVO_Full>(carVOs, pageNumber, pageSize, totalCount);
+        }
+
+        public async Task ToggleAccountStatus(Guid accountId)
+        {
+            await _accountRepository.ToggleAccountStatus(accountId);
+        }
+
+        public async Task ToggleCarVerificationStatus(Guid carId)
+        {
+            await _carRepository.VerifyCarInfo(carId);
+        }
+        public async Task<PaginationResponse<CarVO_Full>> GetCarsByAccountIdAsync(Guid accountId, PaginationRequest paginationRequest)
+        {
+            var pageNumber = paginationRequest.PageNumber;
+            var pageSize = paginationRequest.PageSize;
+
+            var (cars, totalCount) = await _carRepository.GetAccountId(accountId, pageNumber, pageSize);
+            var carVOs = _mapper.Map<List<CarVO_Full>>(cars);
+
+            return new PaginationResponse<CarVO_Full>(carVOs, pageNumber, pageSize, totalCount);
+        }
+        public async Task<PaginationResponse<CarVO_Full>> GetFilteredCarsByAccountId(Guid accountId, PaginationRequest paginationRequest, CarFilterDTO filters)
+        {
+            var (cars, totalCount) = await _carRepository.GetAccountCarsFilteredAsync(accountId, paginationRequest.PageNumber, paginationRequest.PageSize, filters);
+            var carVOs = _mapper.Map<List<CarVO_Full>>(cars);
+            return new PaginationResponse<CarVO_Full>(carVOs, paginationRequest.PageNumber, paginationRequest.PageSize, totalCount);
+        }
+
     }
 }

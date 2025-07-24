@@ -1,6 +1,7 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
 using Microsoft.EntityFrameworkCore;
@@ -53,7 +54,7 @@ namespace CarRental_BE.Repositories.Impl
                 District = dto.District,
                 CityProvince = dto.CityProvince,
 
-                Status = "not_verified",
+                Status = CarStatus.NotVerified.ToString(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 AccountId = accountId
@@ -228,7 +229,7 @@ namespace CarRental_BE.Repositories.Impl
             var query = _context.Cars.AsQueryable();
 
             // Apply location filters
-            query = query.Where(c => c.CityProvince == searchDTO.LocationProvince
+            query = query.Where(c => (string.IsNullOrEmpty(searchDTO.LocationProvince) || c.CityProvince == searchDTO.LocationProvince)
                                   && (string.IsNullOrEmpty(searchDTO.LocationDistrict) || c.District == searchDTO.LocationDistrict)
                                   && (string.IsNullOrEmpty(searchDTO.LocationWard) || c.Ward == searchDTO.LocationWard)
                                   && c.Status == "verified");
@@ -246,10 +247,9 @@ namespace CarRental_BE.Repositories.Impl
             // Apply price range filter
             query = query.Where(c => c.BasePrice >= searchDTO.PriceRangeMin && c.BasePrice <= searchDTO.PriceRangeMax);
 
-            // Apply car type filter (assuming CarTypes is related to some categorization in Car entity)
+            // Apply car type filter
             if (searchDTO.CarTypes != null && searchDTO.CarTypes.Any())
             {
-                // Note: You might need to adjust this based on how car types are stored in your Car entity
                 query = query.Where(c => searchDTO.CarTypes.Contains(c.Model) || searchDTO.CarTypes.Contains(c.Brand));
             }
 
@@ -280,13 +280,40 @@ namespace CarRental_BE.Repositories.Impl
                 query = query.Where(c => c.NumberOfSeats.HasValue && seatCounts.Contains(c.NumberOfSeats.Value));
             }
 
-            // Apply search query filter (searching in brand, model, or description)
+            // Apply search query filter
             if (!string.IsNullOrEmpty(searchDTO.SearchQuery))
             {
                 string searchLower = searchDTO.SearchQuery.ToLower();
                 query = query.Where(c => (c.Brand != null && c.Brand.ToLower().Contains(searchLower))
                                       || (c.Model != null && c.Model.ToLower().Contains(searchLower))
                                       || (c.Description != null && c.Description.ToLower().Contains(searchLower)));
+            }
+
+            // Apply sorting
+            if (!string.IsNullOrEmpty(searchDTO.SortBy))
+            {
+                bool isAscending = string.Equals(searchDTO.Order, "asc", StringComparison.OrdinalIgnoreCase);
+
+                switch (searchDTO.SortBy.ToLower())
+                {
+                    case "price":
+                        query = isAscending
+                            ? query.OrderBy(c => c.BasePrice)
+                            : query.OrderByDescending(c => c.BasePrice);
+                        break;
+                    case "newest":
+                        query = isAscending
+                            ? query.OrderBy(c => c.CreatedAt)
+                            : query.OrderByDescending(c => c.CreatedAt);
+                        break;
+                    default:
+                        query = query.OrderBy(c => c.BasePrice); // Default to price ascending
+                        break;
+                }
+            }
+            else
+            {
+                query = query.OrderBy(c => c.BasePrice); // Default sorting
             }
 
             // Get total count before pagination
@@ -299,6 +326,154 @@ namespace CarRental_BE.Repositories.Impl
                 .ToListAsync();
 
             return (cars: cars, totalCount: totalCount);
+        }
+        public async Task<List<CarSummaryDTO>> GetAllWithFeedback()
+        {
+            var cars = await _context.Cars
+                .Include(c => c.Bookings)
+                    .ThenInclude(b => b.Feedback)
+                .Select(c => new CarSummaryDTO
+                {
+                    Id = c.Id,
+                    Brand = c.Brand,
+                    Model = c.Model,
+                    Color = c.Color,
+                    BasePrice = c.BasePrice,
+                    Deposit = c.Deposit,
+                    Status = c.Status,
+                    Address = c.HouseNumberStreet + ", " + c.Ward + ", " + c.District + ", " + c.CityProvince,
+                    AverageRating = c.Bookings
+                        .Where(b => b.Feedback != null && b.Feedback.Rating.HasValue)
+                        .Select(b => (double?)b.Feedback.Rating.Value)
+                        .DefaultIfEmpty()
+                        .Average()
+                })
+                .ToListAsync();
+
+            return cars;
+        }
+
+
+
+        public async Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(
+    int pageNumber,
+    int pageSize,
+    CarFilterDTO? filters = null)
+        {
+            var query = _context.Cars
+                .Where(c => c.Status == "not_verified");
+
+            // Áp dụng bộ lọc nếu có
+            if (filters != null)
+            {
+                if (!string.IsNullOrEmpty(filters.Brand))
+                {
+                    query = query.Where(c => c.Brand.Contains(filters.Brand));
+                }
+
+                if (!string.IsNullOrEmpty(filters.Search))
+                {
+                    var search = filters.Search.ToLower();
+                    query = query.Where(c =>
+                        (!string.IsNullOrEmpty(c.Brand) && c.Brand.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(c.Model) && c.Model.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(c.Description) && c.Description.ToLower().Contains(search))
+                    );
+                }
+
+                // Sắp xếp
+                if (!string.IsNullOrEmpty(filters.SortBy))
+                {
+                    bool ascending = string.Equals(filters.SortDirection, "asc", StringComparison.OrdinalIgnoreCase);
+
+                    query = filters.SortBy.ToLower() switch
+                    {
+                        "brand" => ascending ? query.OrderBy(c => c.Brand) : query.OrderByDescending(c => c.Brand),
+                        "model" => ascending ? query.OrderBy(c => c.Model) : query.OrderByDescending(c => c.Model),
+                        "price" => ascending ? query.OrderBy(c => c.BasePrice) : query.OrderByDescending(c => c.BasePrice),
+                        _ => query.OrderByDescending(c => c.CreatedAt)
+                    };
+                }
+                else
+                {
+                    query = query.OrderByDescending(c => c.CreatedAt);
+                }
+            }
+            else
+            {
+                query = query.OrderByDescending(c => c.CreatedAt);
+            }
+
+            var totalCount = await query.CountAsync();
+            var cars = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (cars, totalCount);
+        }
+
+        public async Task VerifyCarInfo(Guid carId)
+        {
+            _context.Cars
+                .Where(c => c.Id == carId)
+                .ExecuteUpdate(c => c.SetProperty(car => car.Status, CarStatus.Verified.ToString())
+                .SetProperty(car => car.CertificateOfInspectionUriIsVerified, true)
+                .SetProperty(car => car.RegistrationPaperUriIsVerified, true)
+                .SetProperty(car => car.InsuranceUriIsVerified, true));
+
+            await _context.SaveChangesAsync();
+        }
+        public async Task<(List<Car> cars, int totalCount)> GetAccountCarsFilteredAsync(Guid accountId, int pageNumber, int pageSize, CarFilterDTO filters)
+        {
+            var query = _context.Cars
+                .Where(c => c.AccountId == accountId);
+
+            if (!string.IsNullOrEmpty(filters.Brand))
+            {
+                query = query.Where(c => c.Brand.Contains(filters.Brand));
+            }
+
+            if (!string.IsNullOrEmpty(filters.Search))
+            {
+                var search = filters.Search.ToLower();
+                query = query.Where(c =>
+                    (!string.IsNullOrEmpty(c.Brand) && c.Brand.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(c.Model) && c.Model.ToLower().Contains(search)) ||
+                    (!string.IsNullOrEmpty(c.Description) && c.Description.ToLower().Contains(search))
+                );
+            }
+
+            // Sorting
+            if (!string.IsNullOrEmpty(filters.SortBy))
+            {
+                bool ascending = string.Equals(filters.SortDirection, "asc", StringComparison.OrdinalIgnoreCase);
+
+                query = filters.SortBy.ToLower() switch
+                {
+                    "brand" => ascending ? query.OrderBy(c => c.Brand) : query.OrderByDescending(c => c.Brand),
+                    "model" => ascending ? query.OrderBy(c => c.Model) : query.OrderByDescending(c => c.Model),
+                    "price" => ascending ? query.OrderBy(c => c.BasePrice) : query.OrderByDescending(c => c.BasePrice),
+                    _ => query.OrderByDescending(c => c.CreatedAt)
+                };
+            }
+            else
+            {
+                query = query.OrderByDescending(c => c.CreatedAt);
+            }
+
+            var totalCount = await query.CountAsync();
+            var cars = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (cars, totalCount);
+        }
+
+        public Task<bool> CheckCarBookingStatus(Guid carId, DateTime pickupDate, DateTime dropoffDate)
+        {
+            throw new NotImplementedException();
         }
 
         public Task<Car?> GetCarById(Guid carId)

@@ -26,14 +26,36 @@ namespace CarRental_BE.Repositories.Impl
             return account;
         }
 
-        
+        public async Task<(List<Account>, int)> GetAccountsWithPagingAsync(int page, int pageSize)
+        {
+            var query = _carRentalContext.Accounts
+                .Include(a => a.Role)
+                .OrderByDescending(a => a.CreatedAt);
+
+            int totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<Account?> GetByIdAsync(Guid id)
         {
             return await _carRentalContext.Accounts
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
 
-       
+        public async Task ToggleAccountStatus(Guid accountId)
+        {
+            _carRentalContext.Accounts
+                .Where(a => a.Id == accountId)
+                .ExecuteUpdate(a => a.SetProperty(ac => ac.IsActive, ac => !ac.IsActive));
+            await _carRentalContext.SaveChangesAsync();
+        }
+
         public async Task UpdateAsync(Account account)
         {
             _carRentalContext.Accounts.Update(account);

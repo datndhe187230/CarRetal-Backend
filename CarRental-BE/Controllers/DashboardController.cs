@@ -1,4 +1,8 @@
 ﻿using CarRental_BE.Data;
+using CarRental_BE.Models.Common;
+using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.VO.AdminManagement;
+using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Models.VO.Statistic;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -50,17 +54,17 @@ namespace CarRental_BE.Controllers
         [HttpGet("vehicles/top-booked")]
         public async Task<ActionResult<ApiResponse<IEnumerable<TopBookedVehicleVO>>>> GetTopBookedVehicles([FromQuery] int count = 5)
         {
-            
-                var vehicles = await _dashboardService.GetTopBookedVehiclesAsync(count);
-                return Ok(new ApiResponse<IEnumerable<TopBookedVehicleVO>>(200, "Top booked vehicles retrieved successfully", vehicles));
-            
+
+            var vehicles = await _dashboardService.GetTopBookedVehiclesAsync(count);
+            return Ok(new ApiResponse<IEnumerable<TopBookedVehicleVO>>(200, "Top booked vehicles retrieved successfully", vehicles));
+
         }
 
         [HttpGet("customers/top-paying")]
         public async Task<ActionResult<ApiResponse<IEnumerable<TopPayingCustomerVO>>>> GetTopPayingCustomers([FromQuery] int count = 6)
-        {   
-                var customers = await _dashboardService.GetTopPayingCustomersAsync(count);
-                return Ok(new ApiResponse<IEnumerable<TopPayingCustomerVO>>(200, "Top paying customers retrieved successfully", customers));
+        {
+            var customers = await _dashboardService.GetTopPayingCustomersAsync(count);
+            return Ok(new ApiResponse<IEnumerable<TopPayingCustomerVO>>(200, "Top paying customers retrieved successfully", customers));
         }
 
         [HttpGet("bookings/recent")]
@@ -122,6 +126,96 @@ namespace CarRental_BE.Controllers
             {
                 return StatusCode(500, new ApiResponse<IEnumerable<DailyTransactionVO>>(500, "An error occurred while retrieving daily transactions", null));
             }
+        }
+
+        [HttpGet("accounts/paginated")]
+        public async Task<ActionResult<ApiResponse<PaginationResponse<AccountVO>>>> GetAccountsWithPaging(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var paginationRequest = new PaginationRequest
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+            var paginatedAccounts = await _dashboardService.GetAccountsWithPagingAsync(paginationRequest);
+            return Ok(new ApiResponse<PaginationResponse<AccountVO>>(200, "Paginated accounts retrieved successfully", paginatedAccounts));
+        }
+
+        [HttpGet("cars/unverified/paginated")]
+        public async Task<ActionResult<ApiResponse<PaginationResponse<CarVO_Full>>>> GetAllUnverifiedCars(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? sortBy = null,
+    [FromQuery] string? sortDirection = null,
+    [FromQuery] string? brand = null,
+    [FromQuery] string? search = null)
+        {
+            var filters = new CarFilterDTO
+            {
+                SortBy = sortBy,
+                SortDirection = sortDirection,
+                Brand = brand,
+                Search = search
+            };
+
+            var paginationRequest = new PaginationRequest
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var paginatedCars = await _dashboardService.GetAllUnverifiedCarsAsync(
+                paginationRequest,
+                filters);
+
+            return Ok(new ApiResponse<PaginationResponse<CarVO_Full>>(
+                200,
+                "Paginated unverified cars retrieved successfully",
+                paginatedCars));
+        }
+
+        [HttpPut("accounts/toggle-status/{accountId}")]
+        public async Task<ActionResult<ApiResponse<string>>> ToggleAccountStatus(Guid accountId)
+        {
+            await _dashboardService.ToggleAccountStatus(accountId);
+            return Ok(new ApiResponse<string>(200, "Account status toggled successfully", "Account status toggled successfully"));
+        }
+
+        [HttpPut("cars/toggle-verification/{carId}")]
+        public async Task<ActionResult<ApiResponse<string>>> ToggleCarVerificationStatus(Guid carId)
+        {
+
+            await _dashboardService.ToggleCarVerificationStatus(carId);
+            return Ok(new ApiResponse<string>(200, "Car verification status toggled successfully", "Car verification status toggled successfully"));
+        }
+        [HttpGet("cars/account/{accountId}/paginated")]
+        public async Task<ActionResult<ApiResponse<PaginationResponse<CarVO_Full>>>> GetCarsByAccountId(
+    Guid accountId,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? sortBy = null,
+    [FromQuery] string? sortDirection = null,
+    [FromQuery] string? brand = null,
+    [FromQuery] string? search = null
+)
+        {
+            var filters = new CarFilterDTO
+            {
+                SortBy = sortBy,
+                SortDirection = sortDirection,
+                Brand = brand,
+                Search = search
+            };
+
+            var paginationRequest = new PaginationRequest
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
+            var paginatedCars = await _dashboardService.GetFilteredCarsByAccountId(accountId, paginationRequest, filters);
+            return Ok(new ApiResponse<PaginationResponse<CarVO_Full>>(200, "Paginated cars by account retrieved successfully", paginatedCars));
         }
 
     }

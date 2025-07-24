@@ -1,35 +1,42 @@
-﻿namespace CarRental_BE.Models.Enum
+﻿using System.Runtime.Serialization;
+
+namespace CarRental_BE.Models.Enum
 {
     public enum BookingStatusEnum
     {
         /// <summary>
         /// Booking has been created but payment/deposit not yet confirmed
         /// </summary>
-        PendingDeposit,
+        pending_deposit,
 
         /// <summary>
         /// Deposit received, booking is confirmed
         /// </summary>
-        Confirmed,
+        confirmed,
 
         /// <summary>
         /// Rental period is currently active
         /// </summary>
-        InProgress,
+        in_progress,
 
         /// <summary>
         /// Booking was cancelled by customer or admin
         /// </summary>
-        Cancelled,
+        cancelled,
 
         /// <summary>
         /// Final payment is pending (for pay-later bookings)
         /// </summary>
-        PendingPayment,
+        pending_payment,
 
         /// <summary>
         /// Rental period has ended successfully
         /// </summary>
-        Completed
+        completed,
+
+        /// <summary>
+        /// Waiting for confirmation (mapped to waiting_confirmed)
+        /// </summary>
+        waiting_confirmed
     }
 }

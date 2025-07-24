@@ -74,6 +74,6 @@ namespace CarRental_BE.Models.VO.Car
 
         public virtual Account Account { get; set; } = null!;
 
-        public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+        public virtual ICollection<Entities.Booking> Bookings { get; set; } = new List<Entities.Booking>();
     }
 }

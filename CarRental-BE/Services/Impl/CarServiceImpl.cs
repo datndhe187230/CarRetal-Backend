@@ -122,4 +122,9 @@ public class CarServiceImpl : ICarService
         var car = await _carRepository.GetCarById(carId);
         return car == null ? null : _mapper.Map<CarVO_Full>(car);
     }
+
+    public Task<bool> CheckBookingAvailable(Guid carId, DateTime pickupDate, DateTime dropoffDate)
+    {
+        return _carRepository.CheckCarBookingStatus( carId, pickupDate, dropoffDate);
+    }
 }

@@ -32,15 +32,15 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "email": "vothif@gmail.com",
+  "email": "tmq3007@gmail.com",
   "password": "@Pass1234"
 }
 
 ###
-GET http://localhost:5227/api/User/profile/C807356F-26D3-4F2C-933E-0A351EC1BF33
+GET http://localhost:5227/api/User/profile/b0538894-5ad1-4300-8b71-60aa84574954
 Accept: application/json
 ###
-PUT http://localhost:5227/api/User/profile/3E90353C-1C5D-469E-A572-0579A1C0468D
+PUT http://localhost:5227/api/User/profile/b0538894-5ad1-4300-8b71-60aa84574954
 Content-Type: application/json
 Accept: application/json
 
@@ -192,3 +192,10 @@ Content-Type: application/json
   "rating": 4,
   "comment": "Xe sạch sẽ, tài xế thân thiện."
 }
+}
+###
+GET http://localhost:5227/api/Dashboard/cars/account/5c22f1b7-454c-48aa-9717-48341131e566/paginated?pageNumber=1&pageSize=10&sortBy=createdAt&sortDirection=desc&brand=Toyota&search=innova
+Accept: application/json
+###
+GET http://localhost:5227/api/Dashboard/cars/account/5c22f1b7-454c-48aa-9717-48341131e566/paginated?pageNumber=1&pageSize=10
+Accept: application/json

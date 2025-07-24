@@ -15,6 +15,7 @@ namespace CarRental_BE.Services
 
         Task<Car?> UpdateCarEntity(Guid carId, CarUpdateDTO updatedCar);
         Task<CarVO_Full?> GetCarVOById(Guid carId);
+        Task<bool> CheckBookingAvailable(Guid carId, DateTime pickupDate, DateTime dropoffDate);
     }
 
 }
