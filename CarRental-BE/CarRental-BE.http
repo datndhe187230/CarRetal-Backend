@@ -199,3 +199,7 @@ Accept: application/json
 ###
 GET http://localhost:5227/api/Dashboard/cars/account/5c22f1b7-454c-48aa-9717-48341131e566/paginated?pageNumber=1&pageSize=10
 Accept: application/json
+
+###
+GET http://localhost:5227/api/FeedbackReport/A5BF45C7-2B2D-4A02-84D9-DAA0455F42D8/paginated?pageNumber=1&pageSize=10
+Accept: application/json

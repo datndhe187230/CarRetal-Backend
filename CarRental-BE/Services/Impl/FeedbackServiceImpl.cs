@@ -1,10 +1,12 @@
 ﻿// Services/FeedbackService.cs
 using CarRental_BE.Data;
+using CarRental_BE.Models.Common;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Repositories;
 using System;
 using System.Threading.Tasks;
+using CarRental_BE.Exceptions;
 
 namespace CarRental_BE.Services
 {
@@ -41,7 +43,6 @@ namespace CarRental_BE.Services
 
             await _feedbackRepository.AddFeedbackAsync(feedback);
 
-            // Trả về phản hồi thành công
             return new ApiResponse<FeedbackResponseDTO>(200, "Feedback submitted successfully", new FeedbackResponseDTO { Success = true, Message = "Feedback submitted successfully" });
         }
     }
