@@ -56,6 +56,8 @@ builder.Services.AddScoped<ITransactionRepository, TransactionRepositoryImpl>();
 builder.Services.AddScoped<IDashboardService, DashboardServiceImpl>();
 builder.Services.AddScoped<IWalletRepository, WalletRepositoryImpl>();
 builder.Services.AddScoped<IWalletService, WalletServiceImpl>();
+builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+builder.Services.AddScoped<IFeedbackService, FeedbackServiceImpl>();
 builder.Services.AddScoped<IChatbotService, ChatbotServiceImpl>();
 
 //Configure Elasticsearch settings (local)

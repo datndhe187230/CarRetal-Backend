@@ -2,6 +2,7 @@
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Models.VO;
+using CarRental_BE.Models.DTO;
 
 namespace CarRental_BE.Models.Mapper
 {
@@ -10,7 +11,7 @@ namespace CarRental_BE.Models.Mapper
         public AutoMapperProfile()
         {
             CreateMap<Car, CarVO_ViewACar>()
-                // Chỉ map các trường cần thiết
+
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Brand, opt => opt.MapFrom(src => src.Brand))
                 .ForMember(dest => dest.Model, opt => opt.MapFrom(src => src.Model))
@@ -131,6 +132,13 @@ namespace CarRental_BE.Models.Mapper
                     src.CarImageLeft ?? string.Empty,
                     src.CarImageRight ?? string.Empty
                 }.Where(img => !string.IsNullOrEmpty(img)).ToList()));
+
+            CreateMap<CarUpdateDTO, Car>()
+                .ForMember(dest => dest.AccountId, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
+
+            CreateMap<Car, CarVO_Full>();
         }
     }
 }

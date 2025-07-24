@@ -1,8 +1,29 @@
 {
-  "dependencies": {
-    "secrets1": {
-      "type": "secrets",
-      "connectionId": null
+  "Jwt": {
+    "Issuer": "http://localhost:5227",
+    "Audience": "http://localhost:5227",
+    "SecretKey": "98fafd224516bcafbe01aaa78077eec84b6daadffdbf85137be6ade717ec2b55c85a77d5d628d057c105731a6e58d6be52bc9862d852c1c4467687fb16c551597424f0fa90fc679b3f3e94c5bf08ee41252609d25f1c7824f6a6b34ec08841d9dc6e819f2e5b7a49d7b5a5c4e6c426eb1dbb30ffe0da1a40a5e4b871cdf746599423db1236958003e978342ab9f5123c6eb35e86aa029ff625896d4a6a9fbbdecb34b62cd7bf2b59f9e0e13861bbc1e3344a8c88c68e94d3854a613e086ddb07d09ed06cba99d684eee9d297d898a0281af5e0a4a560ba6de6a8f5baf764c5a065b10887d9151f5ee155a9155a83c1162d97236d2c51b7fc2f6694442a8708df",
+    "TokenValidityMins": 60
+  },
+
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
     }
+  },
+
+  "ConnectionStrings": {
+    "DatabaseConnection": "Server=car-rental.cl22ku0yy1qy.ap-southeast-2.rds.amazonaws.com;Database=CarRental;User Id=admin;Password=quanquan3007;TrustServerCertificate=True;",
+    "Redis": "localhost:6379"
+  },
+
+  "EmailSettings": {
+    "SmtpServer": "smtp.gmail.com",
+    "SmtpPort": 587,
+    "Username": "kienduccml@gmail.com",
+    "Password": "pdqmspuihpebobhu",
+    "SenderName": "CarRental",
+    "SenderEmail": "kienduccml@gmail.com"
   }
 }
