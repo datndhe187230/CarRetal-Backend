@@ -29,6 +29,7 @@ namespace CarRental_BE.Repositories.Impl
             return await _context.Bookings
                                  .Include(b => b.Car)
                                  .Where(b => b.AccountId == accountId)
+                                 .OrderByDescending(b => b.CreatedAt)
                                  .ToListAsync();
         }
 
@@ -200,7 +201,7 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<List<Booking>> GetBookingsByCarId(Guid carId)
         {
-            return await _context.Bookings.Where(b => b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
+            return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() &&  b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
         }
     }
 }
