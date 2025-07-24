@@ -28,7 +28,10 @@ public static class BookingMapper
             PaymentType = booking.PaymentType,
             Status = booking.Status,
             CreatedAt = booking.CreatedAt,
-            CarImageUrl = booking.Car?.CarImageFront        // hoặc chọn ảnh khác
+            CarImageFront = booking.Car?.CarImageFront,
+            CarImageBack = booking.Car?.CarImageBack,
+            CarImageLeft = booking.Car?.CarImageLeft,
+            CarImageRight = booking.Car?.CarImageRight
         };
     }
 

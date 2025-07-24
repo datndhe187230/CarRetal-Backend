@@ -135,8 +135,7 @@ public class BookingServiceImpl : IBookingService
 
         var pickup = booking.PickUpTime ?? DateTime.UtcNow;
         var dropoff = booking.DropOffTime ?? DateTime.UtcNow;
-        var days = (dropoff.Date - pickup.Date).Days + 1;
-        var totalAmount = (booking.BasePrice ?? 0) * days;
+        var totalAmount = booking.BasePrice;
         var deposit = booking.Deposit ?? 0;
 
         var customer = await _accountRepository.GetByIdAsync(booking.AccountId!.Value);
@@ -153,13 +152,13 @@ public class BookingServiceImpl : IBookingService
                 return (false, "ME012: Your wallet doesn’t have enough balance. Please top-up your wallet and try again.");
             }
 
-            customer.Wallet.Balance -= diff;
+            customer.Wallet.Balance -= (long)diff;
             await _accountRepository.UpdateAsync(customer);
         }
         else if (deposit > totalAmount)
         {
             var refund = deposit - totalAmount;
-            customer.Wallet.Balance += refund;
+            customer.Wallet.Balance += (long)refund;
             await _accountRepository.UpdateAsync(customer);
         }
 

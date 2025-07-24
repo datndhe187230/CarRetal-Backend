@@ -54,7 +54,7 @@ namespace CarRental_BE.Repositories.Impl
                 District = dto.District,
                 CityProvince = dto.CityProvince,
 
-                Status = CarStatus.NotVerified.ToString(),
+                Status = CarStatus.not_verified.ToString(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 AccountId = accountId
@@ -417,7 +417,7 @@ namespace CarRental_BE.Repositories.Impl
         {
             _context.Cars
                 .Where(c => c.Id == carId)
-                .ExecuteUpdate(c => c.SetProperty(car => car.Status, CarStatus.Verified.ToString())
+                .ExecuteUpdate(c => c.SetProperty(car => car.Status, CarStatus.verified.ToString())
                 .SetProperty(car => car.CertificateOfInspectionUriIsVerified, true)
                 .SetProperty(car => car.RegistrationPaperUriIsVerified, true)
                 .SetProperty(car => car.InsuranceUriIsVerified, true));
