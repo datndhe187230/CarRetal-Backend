@@ -2,12 +2,15 @@ namespace CarRental_BE.Models.Entities;
 
 using CarRental_BE.Exceptions;
 using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.Mapper;
 using CarRental_BE.Models.VO;
+using CarRental_BE.Models.VO.Booking;
 using CarRental_BE.Models.VO.User;
 using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
 using CarRental_BE.Services;
+using System.Threading.Tasks;
 
 public class BookingServiceImpl : IBookingService
 {
@@ -15,19 +18,22 @@ public class BookingServiceImpl : IBookingService
     private readonly IAccountRepository _accountRepository;
     private readonly ICarRepository _carRepository;
     private readonly IEmailService _emailService;
+    private readonly IWalletService _walletService;
 
     public BookingServiceImpl(
         IBookingRepository bookingRepository,
         IAccountRepository accountRepository,
-   
         ICarRepository carRepository,
-    
-        IEmailService emailService)
+        IEmailService emailService,
+        IWalletService walletService
+        )
     {
         _bookingRepository = bookingRepository;
         _accountRepository = accountRepository;
         _carRepository = carRepository;
         _emailService = emailService;
+        _walletService = walletService
+        ;
     }
 
     public async Task<List<BookingVO>> GetAllBookingsAsync()
@@ -76,7 +82,7 @@ public class BookingServiceImpl : IBookingService
             if (owner != null)
             {
                 string subject = "Booking Cancelled";
-                string body = GenerateCancelBookingEmailContent(booking, owner); 
+                string body = GenerateCancelBookingEmailContent(booking, owner);
                 await _emailService.SendEmailAsync(owner.Email, subject, body);
             }
         }
@@ -177,6 +183,110 @@ public class BookingServiceImpl : IBookingService
         return (true, "Return completed successfully");
     }
 
+    public async Task<BookingVO?> CreateBookingAsync(Guid userId, BookingCreateDTO bookingCreateDto)
+    {
+        Car? car = await _carRepository.GetByIdAsync(bookingCreateDto.CarId);
+        if (car == null)
+        {
+            throw new ArgumentException("Car not found.");
+        }
+
+        if (bookingCreateDto.PaymentType == "cash")
+        {
+            string bookingNumber = await GenerateBookingNumberAsync();
+            decimal basePrice = car.BasePrice * bookingCreateDto.RentalDays;
+            Booking newBooking = BookingMapper.ToBookingEntity(bookingCreateDto, userId, BookingStatusEnum.pending_deposit, basePrice, bookingNumber);
+
+            newBooking = await _bookingRepository.CreateBookingAsync(newBooking);
+
+            if (newBooking == null)
+            {
+                throw new InvalidOperationException("Failed to create booking.");
+            }
+
+            //TODO: Send confirmation email to user
+
+            return BookingMapper.ToBookingVO(newBooking);
+
+        }
+        else if (bookingCreateDto.PaymentType == "wallet")
+        {
+            await CheckWallet(userId, bookingCreateDto); // Add 'await' here
+
+            string bookingNumber = await GenerateBookingNumberAsync();
+
+            //Deduct balance from customer wallet
+            WithdrawDTO withdrawDTO = new WithdrawDTO
+            {
+                Amount = (long)bookingCreateDto.Deposit,
+                Message = "Booking deposit"
+            };
+
+            await _walletService.WithdrawMoney(userId, withdrawDTO);
 
 
+            //Add deposite to car owner balance
+            TopupDTO topupDTO = new TopupDTO
+            {
+                Amount = (long)bookingCreateDto.Deposit,
+                Message = "Booking deposite paid"
+            };
+            await _walletService.TopupMoney(car.AccountId, topupDTO);
+
+            decimal basePrice = car.BasePrice * bookingCreateDto.RentalDays;
+
+            if (((double)bookingCreateDto.Deposit) < ((double)basePrice * 0.3))
+            {
+                throw new InvalidOperationException("Deposite amount must be greater than 30% of total");
+            }
+
+            Booking newBooking = BookingMapper.ToBookingEntity(bookingCreateDto, userId, BookingStatusEnum.confirmed, basePrice, bookingNumber);
+
+            newBooking = await _bookingRepository.CreateBookingAsync(newBooking);
+            //TODO: Send confirmation email to user and car owner
+
+            return BookingMapper.ToBookingVO(newBooking);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid payment type. Must be 'cash' or 'wallet'.");
+        }
+
+        return null; // Adjust return as needed based on your logic  
+    }
+
+    private async Task CheckWallet(Guid userId, BookingCreateDTO bookingCreateDto)
+    {
+        decimal walletBalance = (await _walletService.GetWalletBalance(userId)).Balance;
+        if (bookingCreateDto.Deposit < 0)
+        {
+            throw new ArgumentException("Deposited amount cannot be negative for wallet payments.");
+        }
+        else if (walletBalance < bookingCreateDto.Deposit)
+        {
+            throw new ArgumentException("Insufficient wallet balance for the booking.");
+        }
+    }
+
+    private async Task<string> GenerateBookingNumberAsync()
+    {
+        // Get today's date in YYYYMMdd format
+        string datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+
+        // Get the next sequence number from the database for today
+        int sequence = await _bookingRepository.GetNextBookingSequenceForDateAsync(datePart);
+
+        // Combine to form booking number
+        return $"{datePart}-{sequence}";
+    }
+
+    public async Task<OccupiedDateRange[]> GetOccupiedDatesByCarId(Guid carId)
+    {
+        List<Booking> bookings = (List<Booking>)await _bookingRepository.GetBookingsByCarId(carId);
+        return bookings.Select(b => new OccupiedDateRange
+        {
+            Start = (DateTime)b.PickUpTime,
+            End = (DateTime)b.DropOffTime,
+        }).ToArray();
+    }
 }

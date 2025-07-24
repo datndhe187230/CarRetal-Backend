@@ -229,7 +229,7 @@ namespace CarRental_BE.Repositories.Impl
             var query = _context.Cars.AsQueryable();
 
             // Apply location filters
-            query = query.Where(c => c.CityProvince == searchDTO.LocationProvince
+            query = query.Where(c => (string.IsNullOrEmpty(searchDTO.LocationProvince) || c.CityProvince == searchDTO.LocationProvince)
                                   && (string.IsNullOrEmpty(searchDTO.LocationDistrict) || c.District == searchDTO.LocationDistrict)
                                   && (string.IsNullOrEmpty(searchDTO.LocationWard) || c.Ward == searchDTO.LocationWard)
                                   && c.Status == "verified");
@@ -247,10 +247,9 @@ namespace CarRental_BE.Repositories.Impl
             // Apply price range filter
             query = query.Where(c => c.BasePrice >= searchDTO.PriceRangeMin && c.BasePrice <= searchDTO.PriceRangeMax);
 
-            // Apply car type filter (assuming CarTypes is related to some categorization in Car entity)
+            // Apply car type filter
             if (searchDTO.CarTypes != null && searchDTO.CarTypes.Any())
             {
-                // Note: You might need to adjust this based on how car types are stored in your Car entity
                 query = query.Where(c => searchDTO.CarTypes.Contains(c.Model) || searchDTO.CarTypes.Contains(c.Brand));
             }
 
@@ -281,13 +280,40 @@ namespace CarRental_BE.Repositories.Impl
                 query = query.Where(c => c.NumberOfSeats.HasValue && seatCounts.Contains(c.NumberOfSeats.Value));
             }
 
-            // Apply search query filter (searching in brand, model, or description)
+            // Apply search query filter
             if (!string.IsNullOrEmpty(searchDTO.SearchQuery))
             {
                 string searchLower = searchDTO.SearchQuery.ToLower();
                 query = query.Where(c => (c.Brand != null && c.Brand.ToLower().Contains(searchLower))
                                       || (c.Model != null && c.Model.ToLower().Contains(searchLower))
                                       || (c.Description != null && c.Description.ToLower().Contains(searchLower)));
+            }
+
+            // Apply sorting
+            if (!string.IsNullOrEmpty(searchDTO.SortBy))
+            {
+                bool isAscending = string.Equals(searchDTO.Order, "asc", StringComparison.OrdinalIgnoreCase);
+
+                switch (searchDTO.SortBy.ToLower())
+                {
+                    case "price":
+                        query = isAscending
+                            ? query.OrderBy(c => c.BasePrice)
+                            : query.OrderByDescending(c => c.BasePrice);
+                        break;
+                    case "newest":
+                        query = isAscending
+                            ? query.OrderBy(c => c.CreatedAt)
+                            : query.OrderByDescending(c => c.CreatedAt);
+                        break;
+                    default:
+                        query = query.OrderBy(c => c.BasePrice); // Default to price ascending
+                        break;
+                }
+            }
+            else
+            {
+                query = query.OrderBy(c => c.BasePrice); // Default sorting
             }
 
             // Get total count before pagination
@@ -301,7 +327,6 @@ namespace CarRental_BE.Repositories.Impl
 
             return (cars: cars, totalCount: totalCount);
         }
-
         public async Task<List<CarSummaryDTO>> GetAllWithFeedback()
         {
             var cars = await _context.Cars
@@ -446,5 +471,9 @@ namespace CarRental_BE.Repositories.Impl
             return (cars, totalCount);
         }
 
+        public Task<bool> CheckCarBookingStatus(Guid carId, DateTime pickupDate, DateTime dropoffDate)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
