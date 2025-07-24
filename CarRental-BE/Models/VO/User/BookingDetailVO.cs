@@ -12,6 +12,10 @@ public class BookingDetailVO
     public DateTime? DropOffTime { get; set; }
     public string? AccountEmail { get; set; }
 
+    public string? DropOffLocation { get; set; }
+    public string? PickUpLocation { get; set; }
+
+
     // Renter's information (from Account and UserProfile)
     public string? RenterFullName { get; set; }
     public DateOnly? RenterDob { get; set; }

@@ -20,9 +20,9 @@
 
     public enum CarStatus
     {
-        Verified,
-        Stopped,
-        NotVerified
+        verified,
+        stopped,
+        not_verified
     }
 
     public enum RoleName
