@@ -21,6 +21,7 @@ public interface IBookingRepository
     Task<IEnumerable<MonthlyRevenueVO>> GetMonthlyRevenueAsync(int year);
     Task<IEnumerable<TopBookedVehicleVO>> GetTopBookedVehiclesAsync(int count = 5);
     Task<IEnumerable<BookingStatusCountVO>> GetBookingStatusCountsAsync();
-
-
+    Task<int> GetNextBookingSequenceForDateAsync(string datePart);
+    Task<Booking?> CreateBookingAsync(Booking newBooking);
+    Task<List<Booking>> GetBookingsByCarId(Guid carId);
 }

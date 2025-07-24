@@ -97,4 +97,9 @@ public class CarServiceImpl : ICarService
 
         return carDetail;
     }
+
+    public Task<bool> CheckBookingAvailable(Guid carId, DateTime pickupDate, DateTime dropoffDate)
+    {
+        return _carRepository.CheckCarBookingStatus( carId, pickupDate, dropoffDate);
+    }
 }

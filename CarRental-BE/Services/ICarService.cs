@@ -10,7 +10,7 @@ namespace CarRental_BE.Services
         Task<CarVO_CarDetail> GetCarDetailById(Guid carId);
         Task<PaginationResponse<CarSearchVO>> SearchCar(SearchDTO searchDTO, PaginationRequest requestPage);
         Task<CarVO_CarDetail> AddCar(AddCarDTO addCarDTO);
-
+        Task<bool> CheckBookingAvailable(Guid carId, DateTime pickupDate, DateTime dropoffDate);
     }
 
 }
