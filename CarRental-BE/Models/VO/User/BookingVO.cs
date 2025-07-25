@@ -13,5 +13,11 @@
     public string? PaymentType { get; set; }
     public string? Status { get; set; }
     public DateTime? CreatedAt { get; set; }
-    public string? CarImageUrl { get; set; }             
+    public string? CarImageFront { get; set; }          
+    public string? CarImageBack { get; set; }
+    
+    public string? CarImageLeft { get; set; }
+    public string? CarImageRight { get; set; }
+
+
 }
