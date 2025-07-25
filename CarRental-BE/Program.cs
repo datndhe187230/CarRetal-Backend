@@ -59,6 +59,7 @@ builder.Services.AddScoped<IWalletService, WalletServiceImpl>();
 builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
 builder.Services.AddScoped<IFeedbackService, FeedbackServiceImpl>();
 builder.Services.AddScoped<IChatbotService, ChatbotServiceImpl>();
+builder.Services.AddScoped<IFeedbackReportService, FeedbackReportServiceImpl>();
 
 //Configure Elasticsearch settings (local)
 var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
