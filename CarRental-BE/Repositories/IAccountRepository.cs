@@ -9,5 +9,8 @@ namespace CarRental_BE.Repositories
         Task UpdateAsync(Account account);
         Task<(List<Account>, int)> GetAccountsWithPagingAsync(int page, int pageSize);
         Task ToggleAccountStatus(Guid accountId);
+        Task<Account> GetAccountByIdAsync(Guid id);
+        Task UpdateAccountAsync(Account account);
+        Task<Account> GetCurrentUserAsync(Guid currentUserId);
     }
 }
