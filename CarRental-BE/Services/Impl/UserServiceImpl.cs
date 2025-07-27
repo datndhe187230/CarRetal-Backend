@@ -45,7 +45,7 @@ namespace CarRental_BE.Services.Impl
         public async Task<Account> UpdateUserStatusAsync(Guid id, UserStatusUpdateRequest request, Guid currentUserId)
         {
             var currentUser = await _accountRepository.GetCurrentUserAsync(currentUserId);
-            if (currentUser?.Role.Name != "Admin")
+            if (currentUser?.Role.Name != "admin")
             {
                 throw new UnauthorizedAccessException("Only admins can edit user status.");
             }
