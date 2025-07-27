@@ -1,6 +1,7 @@
 ﻿using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Statistic;
+using Microsoft.EntityFrameworkCore.Storage;
 
 public interface IBookingRepository
 {
@@ -24,4 +25,5 @@ public interface IBookingRepository
     Task<int> GetNextBookingSequenceForDateAsync(string datePart);
     Task<Booking?> CreateBookingAsync(Booking newBooking);
     Task<List<Booking>> GetBookingsByCarId(Guid carId);
+    Task<IDbContextTransaction> BeginTransactionAsync();
 }

@@ -158,5 +158,54 @@ namespace CarRental_BE.Repositories.Impl
                 .FirstOrDefaultAsync(t => t.Id == transactionId);
         }
 
+        public async Task<Wallet?> GetAdminWallet(object accountId)
+        {
+            // Assuming admin is identified by RoleId == 1
+            Guid id;
+            if (accountId is Guid guid)
+                id = guid;
+            else if (accountId is string str && Guid.TryParse(str, out var parsed))
+                id = parsed;
+            else
+                throw new ArgumentException("Invalid accountId type");
+
+            var account = await _context.Accounts
+                .Include(a => a.Wallet)
+                .FirstOrDefaultAsync(a => a.Id == id && a.RoleId == 1);
+
+            return account?.Wallet;
+        }
+
+        public async Task<List<Transaction>> GetTransactionsByBookingNumberAsync(string bookingNumber)
+        {
+            return await _context.Transactions
+                .Where(t => t.BookingNumber == bookingNumber)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<bool> UpdateTransactionStatus(Guid transactionId, string status)
+        {
+            var transaction = await _context.Transactions.FindAsync(transactionId);
+            if (transaction == null)
+                return false;
+
+            transaction.Status = status;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateTransaction(Transaction transaction)
+        {
+            var existing = await _context.Transactions.FindAsync(transaction.Id);
+            if (existing == null)
+                return false;
+
+            _context.Entry(existing).CurrentValues.SetValues(transaction);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.Enum;
 
 namespace CarRental_BE.Repositories
 {
@@ -16,5 +17,9 @@ namespace CarRental_BE.Repositories
         Task<Transaction> CreateTransaction(Transaction transaction);
         Task<bool> UpdateWalletBalance(Guid walletId, long newBalance);
         Task<Transaction?> GetTransactionById(Guid transactionId);
+        Task<Wallet> GetAdminWallet(object accountId);
+        Task<List<Transaction>> GetTransactionsByBookingNumberAsync(string bookingNumber);
+        Task<bool> UpdateTransactionStatus(Guid transactionId, string status);
+        Task<bool> UpdateTransaction(Transaction transaction);
     }
 }

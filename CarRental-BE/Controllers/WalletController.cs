@@ -115,7 +115,7 @@ namespace CarRental_BE.Controllers
         }
 
         [HttpPost("withdraw/{accountId}")]
-        public async Task<ApiResponse<WalletVO_Transaction>> WithdrawMoney(Guid accountId, [FromBody] WithdrawDTO withdrawDTO)
+        public async Task<ApiResponse<WalletVO_Transaction>> WithdrawMoney(Guid accountId, [FromBody] TransactionDTO withdrawDTO)
         {
             try
             {
@@ -152,7 +152,7 @@ namespace CarRental_BE.Controllers
         }
 
         [HttpPost("topup/{accountId}")]
-        public async Task<ApiResponse<WalletVO_Transaction>> TopupMoney(Guid accountId, [FromBody] TopupDTO topupDTO)
+        public async Task<ApiResponse<WalletVO_Transaction>> TopupMoney(Guid accountId, [FromBody] TransactionDTO topupDTO)
         {
             try
             {

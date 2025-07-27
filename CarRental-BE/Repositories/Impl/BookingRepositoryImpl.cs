@@ -5,6 +5,7 @@ using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.VO.Statistic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -202,6 +203,11 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<List<Booking>> GetBookingsByCarId(Guid carId)
         {
             return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() &&  b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
         }
     }
 }
