@@ -44,9 +44,9 @@
     {
         Withdraw,
         Top_up,
-        RefundDeposit,
-        ReceiveDeposit,
-        PayDeposit,
-        OffsetFinalPayment
+        refund_deposit,
+        receive_deposit,
+        pay_deposit,
+        offset_final_payment
     }
 }
