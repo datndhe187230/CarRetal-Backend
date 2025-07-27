@@ -149,5 +149,57 @@ namespace CarRental_BE.Controllers
             BookingVO createdBooking = await _bookingService.CreateBookingAsync(userId, bookingCreateDto);
             return new ApiResponse<BookingVO>(201, "Booking created successfully", createdBooking);
         }
+
+        //[Authorize(Roles = "car_owner")]
+        [HttpPatch("confirm-deposit/{bookingNumber}")]
+        public async Task<IActionResult> ConfirmDeposit(string bookingNumber)
+        {
+            var result = await _bookingService.ConfirmDepositAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+
+            return Ok(new ApiResponse<string>(200, result.Message));
+        }
+
+        [AllowAnonymous]
+        [HttpGet("booking-details/{carId}")]
+        public async Task<ActionResult<ApiResponse<BookingDetailVO>>> GetBookingDetailsByCarId(Guid carId)
+        {
+            var bookingDetail = await _bookingService.GetBookingInformationByCarId(carId);
+
+            if (bookingDetail == null)
+                return NotFound(new ApiResponse<BookingDetailVO>(404, "No pending deposit booking found", null));
+
+            return Ok(new ApiResponse<BookingDetailVO>(200, "Success", bookingDetail));
+        }
+
+
+
+        [AllowAnonymous]
+        [HttpGet("booking-details/batch")]
+        public async Task<ActionResult<ApiResponse<Dictionary<string, BookingDetailVO>>>> GetBookingDetailsByCarIds([FromQuery] string[] carIds)
+        {
+            if (carIds == null || carIds.Length == 0)
+                return BadRequest(new ApiResponse<string>(400, "No car IDs provided", null));
+
+            var result = new Dictionary<string, BookingDetailVO>();
+
+            foreach (var carIdStr in carIds)
+            {
+                if (!Guid.TryParse(carIdStr, out var carId))
+                {
+                    result[carIdStr] = null;
+                    continue;
+                }
+
+                var bookingDetail = await _bookingService.GetBookingInformationByCarId(carId);
+                result[carIdStr] = bookingDetail;
+            }
+
+            return Ok(new ApiResponse<Dictionary<string, BookingDetailVO>>(200, "Success", result));
+        }
+
+
+
     }
 }

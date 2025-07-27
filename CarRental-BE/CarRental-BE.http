@@ -211,3 +211,15 @@ Content-Type: application/json
 {
   "IsActive": false
 }
+
+###
+PATCH http://localhost:5227/api/booking/confirm-deposit/20250724-24
+Content-Type: application/json
+
+###
+GET http://localhost:5227/api/Booking/booking-details/6f732c8f-a0e1-4495-8637-c888fecdd344
+Content-Type: application/json
+
+###
+GET http://localhost:5227/api/Booking/booking-details/6f732c8f-a0e1-4495-8637-c888fecdd344
+Content-Type: application/json
