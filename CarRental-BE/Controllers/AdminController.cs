@@ -4,39 +4,38 @@ using CarRental_BE.Models.VO.AdminManagement;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Security.Claims;
 
 namespace CarRental_BE.Controllers;
 
+[Route("api/[Controller]")] 
 [ApiController]
-[Route("api/[Controller]")]
 [Authorize]
 public class AdminController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ILogger<AdminController> _logger;
 
-    public AdminController(IUserService userService)
+    public AdminController(IUserService userService, ILogger<AdminController> logger)
     {
         _userService = userService;
+        _logger = logger;
     }
 
+    [Authorize(Roles ="admin")]
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateUserStatus(Guid id, [FromBody] UserStatusUpdateRequest request)
     {
         if (request == null)
         {
-            return BadRequest(new ApiResponse<object>(400, "Request body cannot be empty."));
+            return BadRequest(new ApiResponse<object>(400, "Request body cannot be empty or invalid."));
         }
 
         try
         {
-            var currentUserIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdString, out var currentUserId))
-            {
-                return Unauthorized(new ApiResponse<object>(401, "Invalid user token."));
-            }
+            var currentUserId = Guid.Parse("9A2EB519-7054-4A1A-BAED-A33DCA077C37");
 
             var updatedAccount = await _userService.UpdateUserStatusAsync(id, request, currentUserId);
             if (updatedAccount == null)
@@ -47,13 +46,11 @@ public class AdminController : ControllerBase
             var responseData = new { Id = updatedAccount.Id, IsActive = updatedAccount.IsActive };
             return Ok(new ApiResponse<object>(200, "User status updated successfully.", responseData));
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            return StatusCode(403, new ApiResponse<object>(403, ex.Message));
-        }
         catch (Exception ex)
         {
-            return StatusCode(500, new ApiResponse<object>(500, "An unexpected error occurred: " + ex.Message));
+            _logger.LogError(ex, "Error updating user status for user ID {UserId}: {Message}", id, ex.Message);
+            return StatusCode(500, new ApiResponse<object>(500, "An unexpected error occurred."));
         }
     }
+
 }

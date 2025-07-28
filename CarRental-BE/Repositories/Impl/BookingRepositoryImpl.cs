@@ -204,6 +204,32 @@ namespace CarRental_BE.Repositories.Impl
         {
             return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() &&  b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
         }
+        public async Task<bool> UpdateBookingStatusAsync(string bookingNumber, string newStatus)
+        {
+            var booking = await _context.Bookings
+                                       .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
+            if (booking == null)
+                return false;
+
+            booking.Status = newStatus;
+            booking.UpdatedAt = DateTime.UtcNow;
+
+            _context.Bookings.Update(booking);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<Booking>> GetBookingsByCarIdAsync(Guid carId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b =>
+                    b.CarId == carId &&
+                    b.Status != BookingStatusEnum.cancelled.ToString() &&
+                    b.Status != BookingStatusEnum.completed.ToString())
+                .ToListAsync();
+        }
+
 
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {

@@ -355,4 +355,49 @@ public class BookingServiceImpl : IBookingService
             End = (DateTime)b.DropOffTime,
         }).ToArray();
     }
+
+    public async Task<(bool Success, string Message)> ConfirmDepositAsync(string bookingNumber)
+    {
+        var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
+        if (booking == null)
+            return (false, "Booking not found");
+
+        if (booking.Status != BookingStatusEnum.pending_deposit.ToString())
+            return (false, "Only bookings with 'pending_deposit' status can be confirmed");
+
+        var result = await _bookingRepository.UpdateBookingStatusAsync(bookingNumber, BookingStatusEnum.confirmed.ToString());
+        if (!result)
+            return (false, "Failed to update booking status");
+
+        var car = await _carRepository.GetByIdAsync(booking.CarId);
+        if (car != null)
+        {
+            var owner = await _accountRepository.GetByIdAsync(car.AccountId);
+            if (owner != null)
+            {
+                string subject = "Deposit Confirmed";
+                string body = $@"
+                <h3>Deposit Confirmed</h3>
+                <p>Hello {owner.Email},</p>
+                <p>The deposit for booking <strong>{booking.BookingNumber}</strong> has been confirmed.</p>
+                <p>Please check your dashboard for more details.</p>";
+                await _emailService.SendEmailAsync(owner.Email, subject, body);
+            }
+        }
+
+        return (true, "Deposit confirmed successfully");
+    }
+
+    public async Task<BookingDetailVO?> GetBookingInformationByCarId(Guid carId)
+    {
+        var bookingEntities = await _bookingRepository.GetBookingsByCarIdAsync(carId);
+
+        var booking = bookingEntities
+            .FirstOrDefault(b => b.Status == BookingStatusEnum.pending_deposit.ToString());
+
+        return booking != null ? BookingMapper.ToBookingDetailVO(booking) : null;
+    }
+
+
+
 }
