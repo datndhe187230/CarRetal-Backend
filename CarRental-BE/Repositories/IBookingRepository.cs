@@ -1,6 +1,7 @@
 ﻿using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Statistic;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CarRental_BE.Repositories;
 
@@ -25,4 +26,6 @@ public interface IBookingRepository
     Task<List<Booking>> GetBookingsByCarId(Guid carId);
     Task<bool> UpdateBookingStatusAsync(string bookingNumber, string newStatus);
     Task<List<Booking>> GetBookingsByCarIdAsync(Guid carId);
+}
+    Task<IDbContextTransaction> BeginTransactionAsync();
 }

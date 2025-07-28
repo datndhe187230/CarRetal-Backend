@@ -5,6 +5,7 @@ using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.VO.Statistic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -229,5 +230,10 @@ namespace CarRental_BE.Repositories.Impl
                 .ToListAsync();
         }
 
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
+        }
     }
 }
