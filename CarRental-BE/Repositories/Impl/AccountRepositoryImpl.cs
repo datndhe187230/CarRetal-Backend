@@ -61,5 +61,25 @@ namespace CarRental_BE.Repositories.Impl
             _carRentalContext.Accounts.Update(account);
             await _carRentalContext.SaveChangesAsync();
         }
+
+        public async Task<Account> GetAccountByIdAsync(Guid id)
+        {
+            return await _carRentalContext.Accounts
+                .Include(a => a.Role)
+                .FirstOrDefaultAsync(a => a.Id == id);
+        }
+
+        public async Task UpdateAccountAsync(Account account)
+        {
+            _carRentalContext.Accounts.Update(account);
+            await _carRentalContext.SaveChangesAsync();
+        }
+
+        public async Task<Account> GetCurrentUserAsync(Guid currentUserId)
+        {
+            return await _carRentalContext.Accounts
+                .Include(a => a.Role)
+                .FirstOrDefaultAsync(a => a.Id == currentUserId);
+        }
     }
 }

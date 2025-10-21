@@ -60,22 +60,14 @@ Accept: application/json
 
 #call to get all cars
 ###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D
+GET http://localhost:5227/api/Car/84361494-28EA-46BC-8AA6-B6472BD8FA86
 Content-Type: application/json
 Accept: application/json
 }
-
-##Lấy trang đầu tiên, 10 records mỗi trang
-###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D/paginated?pageNumber=1&pageSize=10
-
-#Lấy trang thứ 2, 5 records mỗi trang
-###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D/paginated?pageNumber=2&pageSize=5
-
+ 
 #default pageNumber=1, pageSize=10
 ###
-GET http://localhost:5227/api/Car/3E90353C-1C5D-469E-A572-0579A1C0468D/paginated
+GET http://localhost:5227/api/Car/76C67141-FAAB-4375-AD47-0DAC25551FEC/paginated
 
 
 ###
@@ -101,9 +93,54 @@ Content-Type: application/json
   "phoneNumber": "0987654321",
   "roleId": 2
 }
+}
+
+
+### lay status trên server
+Patch http://localhost:5227/api/Car/edit-car/DD63B6FF-0559-4084-B392-02EF2AC777C5
+Content-Type: application/json
+Accept: application/json
+
+{
+  "brand": "Toyota",
+  "model": "Vios 1.5G",
+  "color": "Black",
+  "basePrice": 550000,
+  "deposit": 1000000,
+  "numberOfSeats": 5,
+  "productionYear": 2022,
+  "mileage": 25000,
+  "fuelConsumption": 6.5,
+  "isGasoline": true,
+  "isAutomatic": true,
+  "termOfUse": "Cho thuê theo ngày hoặc tuần",
+  "additionalFunction": "Camera lùi, Cảm biến va chạm, Cruise Control",
+  "description": "Xe còn mới 95%, nội thất sạch sẽ, máy chạy êm.",
+  "licensePlate": "30G-123.45",
+  "houseNumberStreet": "123 Đường Lê Duẩn",
+  "ward": "Phường 7",
+  "district": "Quận 3",
+  "cityProvince": "TP. Hồ Chí Minh",
+  "carImageFront": "https://example.com/images/front.jpg",
+  "carImageBack": "https://example.com/images/back.jpg",
+  "carImageLeft": "https://example.com/images/left.jpg",
+  "carImageRight": "https://example.com/images/right.jpg",
+  "insuranceUri": "https://example.com/docs/insurance.pdf",
+  "insuranceUriIsVerified": true,
+  "registrationPaperUri": "https://example.com/docs/registration.pdf",
+  "registrationPaperUriIsVerified": true,
+  "certificateOfInspectionUri": "https://example.com/docs/inspection.pdf",
+  "certificateOfInspectionUriIsVerified": true,
+  "status": "verified",
+  "accountId": "a5bf45c7-2b2d-4a02-84d9-daa0455f42d8",
+  "createdAt": "2024-06-13T21:50:11",
+  "updatedAt": "2024-07-22T01:00:00",
+  "account": null,
+  "bookings": []
+}
 
 ###
-GET http://localhost:5227/api/Car/9C5B209C-AD2D-421D-9F01-2609B5C1AE12/detail
+GET http://localhost:5227/api/Car/8330d020-70b9-4e47-8924-6a900e697f6e/detail
 Accept: application/json
 ### Get all bookings (paging)
 GET http://localhost:5227/api/Booking?page=1&pageSize=5
@@ -114,7 +151,7 @@ GET http://localhost:5227/api/Booking/detail/BOOK001
 Accept: application/json
 
  ### Edit bookings by booking number
-PUT http://localhost:5227/api/Booking/edit/BOOK001
+PUT http://localhost:5227/api/Booking/edit/20250724-2
 Accept: application/json
 Content-Type: application/json
 
@@ -145,3 +182,44 @@ Content-Type: application/json
   "OrderDescription": "Test",
   "Name": "Test"
 }
+
+###
+POST http://localhost:5227/api/feedback/submit
+Content-Type: application/json
+{
+
+  "bookingNumber": "BOOK003",
+  "rating": 4,
+  "comment": "Xe sạch sẽ, tài xế thân thiện."
+}
+}
+###
+GET http://localhost:5227/api/Dashboard/cars/account/5c22f1b7-454c-48aa-9717-48341131e566/paginated?pageNumber=1&pageSize=10&sortBy=createdAt&sortDirection=desc&brand=Toyota&search=innova
+Accept: application/json
+###
+GET http://localhost:5227/api/Dashboard/cars/account/5c22f1b7-454c-48aa-9717-48341131e566/paginated?pageNumber=1&pageSize=10
+Accept: application/json
+
+###
+GET http://localhost:5227/api/FeedbackReport/A5BF45C7-2B2D-4A02-84D9-DAA0455F42D8/paginated?pageNumber=1&pageSize=10
+Accept: application/json
+
+###
+PATCH http://localhost:5227/api/Admin/344C1C6F-AB08-4485-AB76-157784A33915/status
+Content-Type: application/json
+
+{
+  "IsActive": false
+}
+
+###
+PATCH http://localhost:5227/api/booking/confirm-deposit/20250724-24
+Content-Type: application/json
+
+###
+GET http://localhost:5227/api/Booking/booking-details/6f732c8f-a0e1-4495-8637-c888fecdd344
+Content-Type: application/json
+
+###
+GET http://localhost:5227/api/Booking/booking-details/6f732c8f-a0e1-4495-8637-c888fecdd344
+Content-Type: application/json

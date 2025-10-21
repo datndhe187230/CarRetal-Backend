@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using InvalidOperationException = CarRental_BE.Exceptions.InvalidOperationException;
+using CarRental_BE.Helpers;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -125,12 +126,16 @@ namespace CarRental_BE.Repositories.Impl
             }
 
             // Verify current password (you should hash and compare)
-            if (account.Password != dto.CurrentPassword) // In real app, use proper password hashing
+            // if (account.Password != dto.CurrentPassword) // In real app, use proper password hashing
+            if (!PasswordHelper.VerifyPassword(dto.CurrentPassword, account.Password))
+
             {
                 return false;
             }
 
-            account.Password = dto.NewPassword; // In real app, hash the new password
+            // account.Password = dto.NewPassword; // In real app, hash the new password
+            account.Password = PasswordHelper.HashPassword(dto.NewPassword);
+
             account.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -150,7 +155,8 @@ namespace CarRental_BE.Repositories.Impl
             {
                 Id = Guid.NewGuid(),
                 Email = dto.Email,
-                Password = dto.Password, // Note: In production, you should hash the password
+                // Password = dto.Password, // Note: In production, you should hash the password
+                Password = PasswordHelper.HashPassword(dto.Password),
                 IsActive = true,
                 IsEmailVerified = false, // Set to true if you have email verification
                 CreatedAt = DateTime.UtcNow,
@@ -219,7 +225,9 @@ namespace CarRental_BE.Repositories.Impl
                 throw new InvalidOperationException("Account not found.");
             }
 
-            account.Password = dto.NewPassword;
+            //account.Password = dto.NewPassword;
+            account.Password = PasswordHelper.HashPassword(dto.NewPassword);
+
             account.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

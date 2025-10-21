@@ -2,6 +2,7 @@
 using CarRental_BE.Models.Common;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Repositories;
 using CarRental_BE.Services;
@@ -19,7 +20,17 @@ public class CarServiceImpl : ICarService
         _mapper = mapper;
     }
 
-    public async Task<PaginationResponse<CarVO_ViewACar>> GetCarsByUserId(
+    public async Task<CarVO_Full?> GetCarById(Guid carId)
+    {
+        var car = await _carRepository.GetCarById(carId);
+        if (car == null)
+        {
+            return null;
+        }
+        return _mapper.Map<CarVO_Full>(car);
+    }
+
+    public async Task<PaginationResponse<CarVO_ViewACar>> GetCarsByAccountId(
         Guid accountId, 
         PaginationRequest request)
     {
@@ -96,5 +107,24 @@ public class CarServiceImpl : ICarService
         var carDetail = _mapper.Map<CarVO_CarDetail>(car);
 
         return carDetail;
+    }
+    public async Task<Car?> UpdateCarEntity(Guid carId, CarUpdateDTO updatedCar)
+    {
+        var car = await _carRepository.GetCarById(carId);
+        if (car == null) return null;
+
+        _mapper.Map(updatedCar, car);
+        return await _carRepository.UpdateCar(car);
+    }
+
+    public async Task<CarVO_Full?> GetCarVOById(Guid carId)
+    {
+        var car = await _carRepository.GetCarById(carId);
+        return car == null ? null : _mapper.Map<CarVO_Full>(car);
+    }
+
+    public Task<bool> CheckBookingAvailable(Guid carId, DateTime pickupDate, DateTime dropoffDate)
+    {
+        return _carRepository.CheckCarBookingStatus( carId, pickupDate, dropoffDate);
     }
 }

@@ -1,6 +1,10 @@
-﻿using CarRental_BE.Models.Entities;
+﻿using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.VO;
+using CarRental_BE.Models.VO.Booking;
 using CarRental_BE.Models.VO.Transaction;
+
 public static class BookingMapper
 {
 
@@ -24,7 +28,10 @@ public static class BookingMapper
             PaymentType = booking.PaymentType,
             Status = booking.Status,
             CreatedAt = booking.CreatedAt,
-            CarImageUrl = booking.Car?.CarImageFront        // hoặc chọn ảnh khác
+            CarImageFront = booking.Car?.CarImageFront,
+            CarImageBack = booking.Car?.CarImageBack,
+            CarImageLeft = booking.Car?.CarImageLeft,
+            CarImageRight = booking.Car?.CarImageRight
         };
     }
 
@@ -51,6 +58,8 @@ public static class BookingMapper
             PickUpTime = booking.PickUpTime,
             DropOffTime = booking.DropOffTime,
             AccountEmail = account?.Email,
+            PickUpLocation = booking?.PickUpLocation,
+            DropOffLocation = booking?.DropOffLocation,
 
             // Renter's information
             RenterFullName = userProfile?.FullName,
@@ -122,6 +131,39 @@ public static class BookingMapper
             BasePrice = booking.BasePrice,
             Deposit = booking.Deposit,
             PaymentType = booking.PaymentType,
-         };
+        };
+    }
+
+    internal static Booking ToBookingEntity(BookingCreateDTO bookingCreateDto, Guid userId, BookingStatusEnum status, decimal basedPrice, string bookingNumber)
+    {
+        return new Booking
+        {
+            BookingNumber = bookingNumber,
+            CarId = bookingCreateDto.CarId,
+            AccountId = userId,
+            PickUpTime = bookingCreateDto.PickupDate,
+            DropOffTime = bookingCreateDto.DropoffDate,
+            PickUpLocation = $"{bookingCreateDto.PickupLocation.Province}/{bookingCreateDto.PickupLocation.District}/{bookingCreateDto.PickupLocation.Ward}",
+            DropOffLocation = $"{bookingCreateDto.PickupLocation.Province}/{bookingCreateDto.PickupLocation.District}/{bookingCreateDto.PickupLocation.Ward}",
+            BasePrice = (long?)basedPrice,
+            Deposit = (long?)bookingCreateDto.Deposit,
+            PaymentType = bookingCreateDto.PaymentType,
+            Status = status.ToString(),
+            CreatedAt = DateTime.UtcNow,
+            DriverFullName = bookingCreateDto.DriverFullName,
+            DriverEmail = bookingCreateDto.DriverEmail,
+            DriverDob = bookingCreateDto.DriverDob == null ? null : DateOnly.FromDateTime((DateTime)bookingCreateDto.DriverDob),
+            DriverPhoneNumber = bookingCreateDto.DriverPhoneNumber,
+            DriverNationalId = bookingCreateDto.DriverNationalId,
+            DriverHouseNumberStreet = bookingCreateDto.DriverHouseNumberStreet,
+            DriverWard = bookingCreateDto.DriverLocation?.Ward,
+            DriverDistrict = bookingCreateDto.DriverLocation?.District,
+            DriverCityProvince = bookingCreateDto.DriverLocation?.Province
+        };
+    }
+
+    internal static BookingInformationVO? ToBookingInformationVO(Booking newBooking)
+    {
+        throw new NotImplementedException();
     }
 }

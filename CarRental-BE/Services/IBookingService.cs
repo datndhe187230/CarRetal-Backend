@@ -1,5 +1,6 @@
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
+using CarRental_BE.Models.VO.Booking;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Models.VO.User;
 
@@ -15,5 +16,12 @@ public interface IBookingService
     Task<BookingDetailVO?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto);
     Task<(bool Success, string Message)> ConfirmPickupAsync(string bookingNumber);
     Task<(bool Success, string Message)> ReturnCarAsync(string bookingNumber);
+    Task<BookingVO?> CreateBookingAsync(Guid userId, BookingCreateDTO bookingCreateDto);
+    Task<OccupiedDateRange[]> GetOccupiedDatesByCarId(Guid carId);
+
+    Task<(bool Success, string Message)> ConfirmDepositAsync(string bookingNumber);
+    Task<BookingDetailVO?> GetBookingInformationByCarId(Guid carId);
+
 
 }
+

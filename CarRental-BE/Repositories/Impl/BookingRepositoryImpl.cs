@@ -5,6 +5,7 @@ using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.VO.Statistic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -29,6 +30,7 @@ namespace CarRental_BE.Repositories.Impl
             return await _context.Bookings
                                  .Include(b => b.Car)
                                  .Where(b => b.AccountId == accountId)
+                                 .OrderByDescending(b => b.CreatedAt)
                                  .ToListAsync();
         }
 
@@ -78,8 +80,8 @@ namespace CarRental_BE.Repositories.Impl
                  throw new BookingNotFoundException(bookingNumber);
 
             // Check if booking status allows editing
-            if (!booking.Status.Equals(BookingStatusEnum.PendingDeposit.ToString(), StringComparison.OrdinalIgnoreCase) &&
-                !booking.Status.Equals(BookingStatusEnum.Confirmed.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!booking.Status.Equals(BookingStatusEnum.pending_deposit.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                !booking.Status.Equals(BookingStatusEnum.confirmed.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 throw new BookingEditException(booking.Status);
             }
@@ -135,7 +137,7 @@ namespace CarRental_BE.Repositories.Impl
         {
             return await _context.Bookings
                 .Where(b => b.CreatedAt.HasValue && b.CreatedAt.Value.Year == year && b.Status == "Completed")
-                .GroupBy(b => b.CreatedAt.Value.Month)
+                .GroupBy(b => b.CreatedAt!.Value.Month) // Use the null-forgiving operator '!' to suppress the warning
                 .Select(g => new MonthlyRevenueVO
                 {
                     Month = g.Key.ToString(),
@@ -183,6 +185,55 @@ namespace CarRental_BE.Repositories.Impl
                     Count = g.Count()
                 })
                 .ToListAsync();
+        }
+
+        public async Task<int> GetNextBookingSequenceForDateAsync(string datePart)
+        {
+            return await _context.Bookings
+                .Where(b => b.BookingNumber.StartsWith(datePart)).CountAsync() + 1;
+        }
+
+        public async Task<Booking?> CreateBookingAsync(Booking newBooking)
+        {
+            _context.Bookings.Add(newBooking);
+            await _context.SaveChangesAsync();
+            return newBooking;
+        }
+
+        public async Task<List<Booking>> GetBookingsByCarId(Guid carId)
+        {
+            return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() &&  b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
+        }
+        public async Task<bool> UpdateBookingStatusAsync(string bookingNumber, string newStatus)
+        {
+            var booking = await _context.Bookings
+                                       .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
+            if (booking == null)
+                return false;
+
+            booking.Status = newStatus;
+            booking.UpdatedAt = DateTime.UtcNow;
+
+            _context.Bookings.Update(booking);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<Booking>> GetBookingsByCarIdAsync(Guid carId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b =>
+                    b.CarId == carId &&
+                    b.Status != BookingStatusEnum.cancelled.ToString() &&
+                    b.Status != BookingStatusEnum.completed.ToString())
+                .ToListAsync();
+        }
+
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
         }
     }
 }

@@ -70,6 +70,7 @@ public class CarController : ControllerBase
 
     //Hung
     [HttpGet("{accountId}/paginated")]
+    [Authorize(Roles = "car_owner")]
     public async Task<ApiResponse<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
         [FromQuery] int PageNumber = 1,
         [FromQuery] int PageSize = 10)
@@ -82,7 +83,7 @@ public class CarController : ControllerBase
                 PageSize = PageSize
             };
 
-            var result = await _carService.GetCarsByUserId(accountId, request);
+            var result = await _carService.GetCarsByAccountId(accountId, request);
 
             var response = new ApiResponse<PaginationResponse<CarVO_ViewACar>>(
                 status: 200,
@@ -99,6 +100,28 @@ public class CarController : ControllerBase
                 data: null
            );
 
+        }
+    }
+
+    [HttpPatch("edit-car/{carId}")]
+    [Authorize(Roles = "car_owner")]
+    public async Task<ApiResponse<CarVO_Full>> UpdateCar(Guid carId, [FromBody] CarUpdateDTO updateDto)
+    {
+        try
+        {
+            var updatedCar = await _carService.UpdateCarEntity(carId, updateDto);
+            if (updatedCar == null)
+            {
+                return new ApiResponse<CarVO_Full>(404, "Car not found", null);
+            }
+
+            var result = await _carService.GetCarVOById(carId);
+
+            return new ApiResponse<CarVO_Full>(200, "Update Success", result);
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponse<CarVO_Full>(500, $"Server error: {ex.Message}", null);
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Chatbot;
 using CarRental_BE.Data;
+using CarRental_BE.Helpers;
 using CarRental_BE.Middleware;
 using CarRental_BE.Models.Common;
 using CarRental_BE.Models.Entities;
@@ -20,8 +21,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,7 +58,10 @@ builder.Services.AddScoped<ITransactionRepository, TransactionRepositoryImpl>();
 builder.Services.AddScoped<IDashboardService, DashboardServiceImpl>();
 builder.Services.AddScoped<IWalletRepository, WalletRepositoryImpl>();
 builder.Services.AddScoped<IWalletService, WalletServiceImpl>();
+builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
+builder.Services.AddScoped<IFeedbackService, FeedbackServiceImpl>();
 builder.Services.AddScoped<IChatbotService, ChatbotServiceImpl>();
+builder.Services.AddScoped<IFeedbackReportService, FeedbackReportServiceImpl>();
 
 //Configure Elasticsearch settings (local)
 var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
@@ -106,7 +112,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     var configuration = builder.Configuration.GetConnectionString("Redis");
     return ConnectionMultiplexer.Connect(configuration);
 });
-
 //Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
@@ -126,8 +131,11 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
+
+            RoleClaimType = ClaimTypes.Role
         };
+
 
         options.Events = new JwtBearerEvents
         {
