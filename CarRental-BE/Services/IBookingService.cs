@@ -1,4 +1,4 @@
-using CarRental_BE.Models.DTO;
+﻿using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Models.VO.Booking;
 using CarRental_BE.Models.VO.Car;
@@ -18,4 +18,6 @@ public interface IBookingService
     Task<(bool Success, string Message)> ReturnCarAsync(string bookingNumber);
     Task<BookingVO?> CreateBookingAsync(Guid userId, BookingCreateDTO bookingCreateDto);
     Task<OccupiedDateRange[]> GetOccupiedDatesByCarId(Guid carId);
+    Task<List<BookingVO>> GetBookingsByAccountIdAsync(Guid accountId, BookingQueryDto queryDto); // Thêm method mới
+
 }

@@ -46,6 +46,57 @@ public class BookingServiceImpl : IBookingService
         var bookingEntities = await _bookingRepository.GetBookingsByAccountIdAsync(accountId);
         return bookingEntities.Select(BookingMapper.ToBookingVO).ToList();
     }
+
+    public async Task<List<BookingVO>> GetBookingsByAccountIdAsync(Guid accountId, BookingQueryDto queryDto)
+    {
+        var bookingEntities = await _bookingRepository.GetBookingsByAccountIdAsync(accountId);
+
+        // Chuyển sang List và áp dụng filter
+        var filteredBookings = ApplyFilters(bookingEntities.AsQueryable(), queryDto).ToList();
+        var sortedBookings = ApplySorting(filteredBookings.AsQueryable(), queryDto.SortOrder).ToList();
+
+        return sortedBookings.Select(BookingMapper.ToBookingVO).ToList();
+    }
+
+    private IQueryable<Booking> ApplyFilters(IQueryable<Booking> bookings, BookingQueryDto queryDto)
+    {
+        var filtered = bookings;
+
+        // Filter by search term
+        if (!string.IsNullOrEmpty(queryDto.SearchTerm))
+        {
+            var searchTerm = queryDto.SearchTerm.ToLower();
+
+            filtered = filtered.Where(b =>
+                (b.Car.Brand ?? "").ToLower().Contains(searchTerm) ||
+                (b.Car.Model ?? "").ToLower().Contains(searchTerm) ||
+                ((b.Car.Brand + " " + b.Car.Model) ?? "").ToLower().Contains(searchTerm) || // Brand + Model
+                (b.BookingNumber ?? "").ToLower().Contains(searchTerm));
+
+    
+        }
+
+        // Filter by status
+        if (queryDto.Statuses != null && queryDto.Statuses.Any())
+        {
+            filtered = filtered.Where(b => queryDto.Statuses.Contains(b.Status ?? ""));
+        }
+
+        return filtered;
+    }
+
+    private IQueryable<Booking> ApplySorting(IQueryable<Booking> bookings, string? sortOrder)
+    {
+        return sortOrder?.ToLower() switch
+        {
+            "oldest" => bookings.OrderBy(b => b.CreatedAt),
+            "newest" => bookings.OrderByDescending(b => b.CreatedAt),
+            _ => bookings.OrderByDescending(b => b.CreatedAt) // default: newest first
+        };
+    }
+
+
+
     public async Task<(List<BookingVO>, int)> GetBookingsWithPagingAsync(int page, int pageSize)
     {
         var (entities, totalCount) = await _bookingRepository.GetBookingsWithPagingAsync(page, pageSize);

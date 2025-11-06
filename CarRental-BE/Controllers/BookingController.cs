@@ -42,7 +42,15 @@ namespace CarRental_BE.Controllers
             var data = await _bookingService.GetBookingsByAccountIdAsync(accountId);
             return Ok(new ApiResponse<List<BookingVO>>(200, "Success", data));
         }
-
+        // Get bookings by account ID với filter và sort
+        [HttpGet("{accountId}/search")]
+        public async Task<ActionResult<ApiResponse<List<BookingVO>>>> GetBookingsByAccountIdWithFilter(
+            Guid accountId,
+            [FromQuery] BookingQueryDto queryDto)
+        {
+            var data = await _bookingService.GetBookingsByAccountIdAsync(accountId, queryDto);
+            return Ok(new ApiResponse<List<BookingVO>>(200, "Success", data));
+        }
         // Get bookings with pagination (admin view)
         [HttpGet]
         public async Task<ActionResult<ApiResponse<PaginationResponse<BookingVO>>>> GetBookings(int page = 1, int pageSize = 5)
