@@ -1,4 +1,4 @@
-using CarRental_BE.Models.DTO;
+﻿using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Models.VO.Booking;
 using CarRental_BE.Models.VO.Car;
@@ -22,6 +22,8 @@ public interface IBookingService
     Task<(bool Success, string Message)> ConfirmDepositAsync(string bookingNumber);
     Task<BookingDetailVO?> GetBookingInformationByCarId(Guid carId);
 
+
+    Task<List<BookingVO>> GetBookingsByAccountIdAsync(Guid accountId, BookingQueryDto queryDto); // Thêm method mới
 
 }
 
