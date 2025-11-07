@@ -202,7 +202,7 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<List<Booking>> GetBookingsByCarId(Guid carId)
         {
-            return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() &&  b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
+            return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() && b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
         }
         public async Task<bool> UpdateBookingStatusAsync(string bookingNumber, string newStatus)
         {
@@ -234,6 +234,59 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
             return await _context.Database.BeginTransactionAsync();
+        }
+
+        // Owner dashboard implementations
+        public async Task<decimal> GetOwnerTotalRevenueAsync(Guid ownerAccountId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b => b.Car.AccountId == ownerAccountId && b.Status == BookingStatusEnum.completed.ToString())
+                .SumAsync(b => (decimal)(b.BasePrice ?? 0));
+        }
+
+        public async Task<int> GetOwnerActiveBookingsCountAsync(Guid ownerAccountId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .CountAsync(b => b.Car.AccountId == ownerAccountId && (b.Status == BookingStatusEnum.in_progress.ToString() || b.Status == BookingStatusEnum.confirmed.ToString()));
+        }
+
+        public async Task<int> GetOwnerTotalCustomersCountAsync(Guid ownerAccountId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b => b.Car.AccountId == ownerAccountId)
+                .Select(b => b.AccountId)
+                .Distinct()
+                .CountAsync();
+        }
+
+        public async Task<IEnumerable<MonthlyRevenueVO>> GetOwnerMonthlyRevenueAsync(Guid ownerAccountId, int year)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b => b.Car.AccountId == ownerAccountId && b.CreatedAt.HasValue && b.CreatedAt.Value.Year == year && b.Status == BookingStatusEnum.completed.ToString())
+                .GroupBy(b => b.CreatedAt!.Value.Month)
+                .Select(g => new MonthlyRevenueVO
+                {
+                    Month = g.Key.ToString(),
+                    Total = g.Sum(b => (decimal)(b.BasePrice ?? 0))
+                })
+                .ToListAsync();
+        }
+
+        public async Task<decimal> GetOwnerFleetUtilizationAsync(Guid ownerAccountId)
+        {
+            // naive approximation: percentage of owner's cars that have at least one active/confirmed booking today
+            var ownerCarIds = await _context.Cars.Where(c => c.AccountId == ownerAccountId).Select(c => c.Id).ToListAsync();
+            if (!ownerCarIds.Any()) return 0m;
+            var activeCars = await _context.Bookings
+                .Where(b => ownerCarIds.Contains(b.CarId) && (b.Status == BookingStatusEnum.in_progress.ToString() || b.Status == BookingStatusEnum.confirmed.ToString()))
+                .Select(b => b.CarId)
+                .Distinct()
+                .CountAsync();
+            return Math.Round(((decimal)activeCars / ownerCarIds.Count) * 100m, 1);
         }
     }
 }
