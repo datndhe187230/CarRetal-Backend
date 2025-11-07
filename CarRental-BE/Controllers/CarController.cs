@@ -169,7 +169,7 @@ public class CarController : ControllerBase
 
         var response = new ApiResponse<PaginationResponse<CarSearchVO>>(
             status: 200,
-            message: "Search functionality is not implemented yet",
+            message: "Successful",
             data: list
         );
 

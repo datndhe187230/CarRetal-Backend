@@ -26,6 +26,11 @@ public interface IBookingRepository
     Task<List<Booking>> GetBookingsByCarId(Guid carId);
     Task<bool> UpdateBookingStatusAsync(string bookingNumber, string newStatus);
     Task<List<Booking>> GetBookingsByCarIdAsync(Guid carId);
-
     Task<IDbContextTransaction> BeginTransactionAsync();
+    // Owner-specific dashboard statistics
+    Task<decimal> GetOwnerTotalRevenueAsync(Guid ownerAccountId);
+    Task<int> GetOwnerActiveBookingsCountAsync(Guid ownerAccountId);
+    Task<int> GetOwnerTotalCustomersCountAsync(Guid ownerAccountId);
+    Task<IEnumerable<MonthlyRevenueVO>> GetOwnerMonthlyRevenueAsync(Guid ownerAccountId, int year);
+    Task<decimal> GetOwnerFleetUtilizationAsync(Guid ownerAccountId);
 }
