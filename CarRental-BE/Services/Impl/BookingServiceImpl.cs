@@ -105,27 +105,23 @@ public class BookingServiceImpl : IBookingService
     }
     public async Task<(bool Success, string Message)> CancelBookingAsync(string bookingNumber)
     {
-        // Lấy thông tin booking từ repository
+        // Get booking info from repository
         var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
         if (booking == null || booking.Status?.ToLower() == "cancelled")
             return (false, "Invalid or already cancelled booking");
 
-        // Cập nhật trạng thái huỷ
+        // If booking is confirmed, revert transaction
+        if (booking.Status?.ToLower() == "confirmed")
+        {
+            // Revert wallet transactions for this booking
+            await _walletService.RevertBookingTransactionsAsync(bookingNumber);
+        }
+
+        // Update status to cancelled
         booking.Status = "cancelled";
         await _bookingRepository.UpdateAsync(booking);
 
-        // Hoàn tiền đặt cọc vào ví khách hàng
-        if (booking.AccountId.HasValue)
-        {
-            var customer = await _accountRepository.GetByIdAsync(booking.AccountId.Value);
-            if (customer?.Wallet != null && booking.Deposit.HasValue)
-            {
-                customer.Wallet.Balance += booking.Deposit.Value;
-                await _accountRepository.UpdateAsync(customer);
-            }
-        }
-
-        // Gửi email thông báo tới chủ xe
+        // Send email notification to car owner
         var car = await _carRepository.GetByIdAsync(booking.CarId);
         if (car != null)
         {
@@ -184,15 +180,14 @@ public class BookingServiceImpl : IBookingService
         if (booking.Status?.ToLower() != "in_progress")
             return (false, "Only in-progress bookings can be returned");
 
-        var pickup = booking.PickUpTime ?? DateTime.UtcNow;
-        var dropoff = booking.DropOffTime ?? DateTime.UtcNow;
-        var totalAmount = booking.BasePrice;
+        var totalAmount = booking.BasePrice ?? 0;
         var deposit = booking.Deposit ?? 0;
 
         var customer = await _accountRepository.GetByIdAsync(booking.AccountId!.Value);
         if (customer?.Wallet == null)
             return (false, "Customer wallet not found");
 
+        // 1. Create transaction for remaining payment or refund
         if (totalAmount > deposit)
         {
             var diff = totalAmount - deposit;
@@ -203,17 +198,51 @@ public class BookingServiceImpl : IBookingService
                 return (false, "ME012: Your wallet doesn’t have enough balance. Please top-up your wallet and try again.");
             }
 
+            // Deduct remaining amount from wallet and create transaction
             customer.Wallet.Balance -= (long)diff;
             await _accountRepository.UpdateAsync(customer);
+
+            var payTransaction = new TransactionDTO
+            {
+                Amount = (long)diff,
+                Message = "Pay remaining rental fee",
+                BookingId = booking.BookingNumber,
+                CarName = booking.Car != null ? $"{booking.Car.Brand} {booking.Car.Model} {booking.Car.ProductionYear} {booking.Car.LicensePlate}" : "",
+                Type = TransactionType.offset_final_payment,
+                Status = TransactionStatus.Successful
+            };
+            await _walletService.WithdrawMoney(customer.Id, payTransaction);
         }
         else if (deposit > totalAmount)
         {
             var refund = deposit - totalAmount;
             customer.Wallet.Balance += (long)refund;
             await _accountRepository.UpdateAsync(customer);
+
+            var refundTransaction = new TransactionDTO
+            {
+                Amount = (long)refund,
+                Message = "Refund excess deposit",
+                BookingId = booking.BookingNumber,
+                CarName = booking.Car != null ? $"{booking.Car.Brand} {booking.Car.Model} {booking.Car.ProductionYear} {booking.Car.LicensePlate}" : "",
+                Type = TransactionType.offset_final_payment,
+                Status = TransactionStatus.Successful
+            };
+            await _walletService.TopupMoney(customer.Id, refundTransaction);
         }
 
-        booking.Status = "completed";
+        // 2. Update all pending deposit transactions to successful
+        var depositTransactions = booking.Transactions
+            .Where(t => (t.Type == TransactionType.pay_deposit.ToString() || t.Type != TransactionType.receive_deposit.ToString()) &&
+                        t.Status == TransactionStatus.Processing.ToString())
+            .ToList();
+
+        foreach (var transaction in depositTransactions)
+        {
+            await _walletService.UpdateTransactionStatusAsync(transaction.Id, TransactionStatus.Successful.ToString());
+        }
+
+        booking.Status = BookingStatusEnum.completed.ToString();
         await _bookingRepository.UpdateAsync(booking);
 
         var car = booking.Car ?? await _carRepository.GetByIdAsync(booking.CarId);
@@ -223,10 +252,10 @@ public class BookingServiceImpl : IBookingService
         {
             string subject = "Car Returned";
             string body = $@"
-        <h3>Car Returned</h3>
-        <p>Hello {owner.Email},</p>
-        <p>Booking <strong>{booking.BookingNumber}</strong> has been returned successfully by the customer.</p>
-        <p>Please check your dashboard for more details.</p>";
+            <h3>Car Returned</h3>
+            <p>Hello {owner.Email},</p>
+            <p>Booking <strong>{booking.BookingNumber}</strong> has been returned successfully by the customer.</p>
+            <p>Please check your dashboard for more details.</p>";
             await _emailService.SendEmailAsync(owner.Email, subject, body);
         }
 
@@ -235,74 +264,112 @@ public class BookingServiceImpl : IBookingService
 
     public async Task<BookingVO?> CreateBookingAsync(Guid userId, BookingCreateDTO bookingCreateDto)
     {
-        Car? car = await _carRepository.GetByIdAsync(bookingCreateDto.CarId);
-        if (car == null)
+        // Begin a transaction
+        using (var transaction = await _bookingRepository.BeginTransactionAsync())
         {
-            throw new ArgumentException("Car not found.");
-        }
-
-        if (bookingCreateDto.PaymentType == "cash")
-        {
-            string bookingNumber = await GenerateBookingNumberAsync();
-            decimal basePrice = car.BasePrice * bookingCreateDto.RentalDays;
-            Booking newBooking = BookingMapper.ToBookingEntity(bookingCreateDto, userId, BookingStatusEnum.pending_deposit, basePrice, bookingNumber);
-
-            newBooking = await _bookingRepository.CreateBookingAsync(newBooking);
-
-            if (newBooking == null)
+            try
             {
-                throw new InvalidOperationException("Failed to create booking.");
+                Car? car = await _carRepository.GetByIdAsync(bookingCreateDto.CarId);
+                if (car == null)
+                {
+                    throw new ArgumentException("Car not found.");
+                }
+
+                if (bookingCreateDto.PaymentType == "cash")
+                {
+                    string bookingNumber = await GenerateBookingNumberAsync();
+                    decimal basePrice = car.BasePrice * bookingCreateDto.RentalDays;
+                    Booking newBooking = BookingMapper.ToBookingEntity(bookingCreateDto, userId, BookingStatusEnum.pending_deposit, basePrice, bookingNumber);
+
+                    newBooking = await _bookingRepository.CreateBookingAsync(newBooking);
+
+                    if (newBooking == null)
+                    {
+                        throw new InvalidOperationException("Failed to create booking.");
+                    }
+
+                    // TODO: Send confirmation email to user
+
+                    // Commit the transaction for cash payment
+                    await transaction.CommitAsync();
+
+                    return BookingMapper.ToBookingVO(newBooking);
+                }
+                else if (bookingCreateDto.PaymentType == "wallet")
+                {
+                    await CheckWallet(userId, bookingCreateDto);
+
+                    string bookingNumber = await GenerateBookingNumberAsync();
+                    decimal basePrice = car.BasePrice * bookingCreateDto.RentalDays;
+
+                    if (((double)bookingCreateDto.Deposit) < ((double)basePrice * 0.3))
+                    {
+                        throw new InvalidOperationException("Deposit amount must be greater than 30% of total");
+                    }
+
+                    Booking newBooking = BookingMapper.ToBookingEntity(bookingCreateDto, userId, BookingStatusEnum.confirmed, basePrice, bookingNumber);
+
+                    newBooking = await _bookingRepository.CreateBookingAsync(newBooking);
+                    if (newBooking == null)
+                    {
+                        throw new InvalidOperationException("Failed to create booking.");
+                    }
+
+                    // Deduct balance from customer wallet
+                    TransactionDTO withdrawDTO = new TransactionDTO
+                    {
+                        Amount = (long)bookingCreateDto.Deposit,
+                        Message = "Booking deposit",
+                        BookingId = bookingNumber,
+                        CarName = $"{car.Brand} {car.Model} {car.ProductionYear} {car.LicensePlate}",
+                        Type = TransactionType.pay_deposit,
+                        Status = TransactionStatus.Processing
+                    };
+
+                    await _walletService.WithdrawMoney(userId, withdrawDTO);
+
+                    // Add 90% deposit to car owner balance
+                    TransactionDTO topupDTO = new TransactionDTO
+                    {
+                        Amount = (long)(bookingCreateDto.Deposit * 0.9m),
+                        Message = "Booking deposit paid",
+                        BookingId = bookingNumber,
+                        CarName = $"{car.Brand} {car.Model} {car.ProductionYear} {car.LicensePlate}",
+                        Type = TransactionType.receive_deposit,
+                        Status = TransactionStatus.Processing
+                    };
+                    await _walletService.TopupMoney(car.AccountId, topupDTO);
+
+                    // Add 10% deposit to admin balance
+                    TransactionDTO topupAdminDTO = new TransactionDTO
+                    {
+                        Amount = (long)(bookingCreateDto.Deposit * 0.1m),
+                        Message = "Booking deposit commission",
+                        BookingId = bookingNumber,
+                        CarName = $"{car.Brand} {car.Model} {car.ProductionYear} {car.LicensePlate}",
+                        Type = TransactionType.receive_deposit
+                    };
+                    await _walletService.TopupMoneyAdmin(topupAdminDTO);
+
+                    // TODO: Send confirmation email to user and car owner
+
+                    // Commit the transaction for wallet payment
+                    await transaction.CommitAsync();
+
+                    return BookingMapper.ToBookingVO(newBooking);
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid payment type. Must be 'cash' or 'wallet'.");
+                }
             }
-
-            //TODO: Send confirmation email to user
-
-            return BookingMapper.ToBookingVO(newBooking);
-
-        }
-        else if (bookingCreateDto.PaymentType == "wallet")
-        {
-            await CheckWallet(userId, bookingCreateDto); // Add 'await' here
-
-            string bookingNumber = await GenerateBookingNumberAsync();
-
-            //Deduct balance from customer wallet
-            WithdrawDTO withdrawDTO = new WithdrawDTO
+            catch
             {
-                Amount = (long)bookingCreateDto.Deposit,
-                Message = "Booking deposit"
-            };
-
-            await _walletService.WithdrawMoney(userId, withdrawDTO);
-
-
-            //Add deposite to car owner balance
-            TopupDTO topupDTO = new TopupDTO
-            {
-                Amount = (long)bookingCreateDto.Deposit,
-                Message = "Booking deposite paid"
-            };
-            await _walletService.TopupMoney(car.AccountId, topupDTO);
-
-            decimal basePrice = car.BasePrice * bookingCreateDto.RentalDays;
-
-            if (((double)bookingCreateDto.Deposit) < ((double)basePrice * 0.3))
-            {
-                throw new InvalidOperationException("Deposite amount must be greater than 30% of total");
+                // Roll back the transaction on any error
+                await transaction.RollbackAsync();
+                throw;
             }
-
-            Booking newBooking = BookingMapper.ToBookingEntity(bookingCreateDto, userId, BookingStatusEnum.confirmed, basePrice, bookingNumber);
-
-            newBooking = await _bookingRepository.CreateBookingAsync(newBooking);
-            //TODO: Send confirmation email to user and car owner
-
-            return BookingMapper.ToBookingVO(newBooking);
         }
-        else
-        {
-            throw new ArgumentException("Invalid payment type. Must be 'cash' or 'wallet'.");
-        }
-
-        return null; // Adjust return as needed based on your logic  
     }
 
     private async Task CheckWallet(Guid userId, BookingCreateDTO bookingCreateDto)
@@ -339,4 +406,49 @@ public class BookingServiceImpl : IBookingService
             End = (DateTime)b.DropOffTime,
         }).ToArray();
     }
+
+    public async Task<(bool Success, string Message)> ConfirmDepositAsync(string bookingNumber)
+    {
+        var booking = await _bookingRepository.GetByBookingNumberAsync(bookingNumber);
+        if (booking == null)
+            return (false, "Booking not found");
+
+        if (booking.Status != BookingStatusEnum.pending_deposit.ToString())
+            return (false, "Only bookings with 'pending_deposit' status can be confirmed");
+
+        var result = await _bookingRepository.UpdateBookingStatusAsync(bookingNumber, BookingStatusEnum.confirmed.ToString());
+        if (!result)
+            return (false, "Failed to update booking status");
+
+        var car = await _carRepository.GetByIdAsync(booking.CarId);
+        if (car != null)
+        {
+            var owner = await _accountRepository.GetByIdAsync(car.AccountId);
+            if (owner != null)
+            {
+                string subject = "Deposit Confirmed";
+                string body = $@"
+                <h3>Deposit Confirmed</h3>
+                <p>Hello {owner.Email},</p>
+                <p>The deposit for booking <strong>{booking.BookingNumber}</strong> has been confirmed.</p>
+                <p>Please check your dashboard for more details.</p>";
+                await _emailService.SendEmailAsync(owner.Email, subject, body);
+            }
+        }
+
+        return (true, "Deposit confirmed successfully");
+    }
+
+    public async Task<BookingDetailVO?> GetBookingInformationByCarId(Guid carId)
+    {
+        var bookingEntities = await _bookingRepository.GetBookingsByCarIdAsync(carId);
+
+        var booking = bookingEntities
+            .FirstOrDefault(b => b.Status == BookingStatusEnum.pending_deposit.ToString());
+
+        return booking != null ? BookingMapper.ToBookingDetailVO(booking) : null;
+    }
+
+
+
 }
