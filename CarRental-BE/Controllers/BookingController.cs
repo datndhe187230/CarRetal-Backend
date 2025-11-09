@@ -158,8 +158,8 @@ namespace CarRental_BE.Controllers
             return new ApiResponse<BookingVO>(201, "Booking created successfully", createdBooking);
         }
 
-        //[Authorize(Roles = "car_owner")]
-        [HttpPatch("confirm-deposit/{bookingNumber}")]
+        [Authorize(Roles = "car_owner")]
+        [HttpPut("{bookingNumber}/confirm-deposit")]
         public async Task<IActionResult> ConfirmDeposit(string bookingNumber)
         {
             var result = await _bookingService.ConfirmDepositAsync(bookingNumber);
