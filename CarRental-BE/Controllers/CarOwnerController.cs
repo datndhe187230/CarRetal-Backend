@@ -46,7 +46,12 @@ namespace CarRental_BE.Controllers
             var data = await _service.GetMonthlyRevenueAsync(accountId, year);
             return Ok(new ApiResponse<IEnumerable<CarOwnerMonthlyRevenueVO>>(200, "success", data));
         }
-
+        [HttpGet("dashboard/upcomming-bookings")]
+        public async Task<ActionResult<ApiResponse<List<BookingVO>>>> GetUpcommingBookingsByAccountId(Guid accountId, int limit)
+        {
+            var data = await _service.GetUpcommingBookingsByAccountIdAsync(accountId, limit);
+            return Ok(new ApiResponse<List<BookingVO>>(200, "Success", data));
+        }
         [HttpGet("dashboard/{accountId}/ratings/summary")]
         [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<CarOwnerRatingSummaryVO>>> GetRatingsSummary(Guid accountId)
@@ -89,11 +94,63 @@ namespace CarRental_BE.Controllers
             try
             {
                 var result = await _service.GetOwnerBookingsAsync(principalId, query);
+                if (!result.Data.Any())
+                {
+                    return NotFound(new ApiResponse<string>(404, "No bookings found"));
+                }
                 return Ok(new ApiResponse<PaginationResponse<CarOwnerBookingListItemVO>>(200, "Success", result));
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { code =400, message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponse<string>(500, "Internal server error"));
+            }
+        }
+
+        // Earnings metrics
+        [HttpGet("dashboard/earnings")]
+        public async Task<ActionResult<ApiResponse<CarOwnerEarningsVO>>> GetEarnings()
+        {
+            var principalIdStr = User.FindFirst("id")?.Value;
+            if (!Guid.TryParse(principalIdStr, out var accountId))
+            {
+                return Unauthorized(new ApiResponse<string>(401, "Unauthorized"));
+            }
+            try
+            {
+                var data = await _service.GetEarningsAsync(accountId);
+                return Ok(new ApiResponse<CarOwnerEarningsVO>(200, "success", data));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return StatusCode(403, new ApiResponse<string>(403, "Forbidden"));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponse<string>(500, "Internal server error"));
+            }
+        }
+
+        // Fleet metrics
+        [HttpGet("dashboard/fleet")]
+        public async Task<ActionResult<ApiResponse<CarOwnerFleetVO>>> GetFleet()
+        {
+            var principalIdStr = User.FindFirst("id")?.Value;
+            if (!Guid.TryParse(principalIdStr, out var accountId))
+            {
+                return Unauthorized(new ApiResponse<string>(401, "Unauthorized"));
+            }
+            try
+            {
+                var data = await _service.GetFleetAsync(accountId);
+                return Ok(new ApiResponse<CarOwnerFleetVO>(200, "success", data));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return StatusCode(403, new ApiResponse<string>(403, "Forbidden"));
             }
             catch (Exception)
             {
