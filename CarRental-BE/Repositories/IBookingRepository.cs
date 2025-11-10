@@ -33,4 +33,7 @@ public interface IBookingRepository
     Task<int> GetOwnerTotalCustomersCountAsync(Guid ownerAccountId);
     Task<IEnumerable<MonthlyRevenueVO>> GetOwnerMonthlyRevenueAsync(Guid ownerAccountId, int year);
     Task<decimal> GetOwnerFleetUtilizationAsync(Guid ownerAccountId);
+    Task<IQueryable<Booking>> GetAllBookingsByCarOwnerAsync(Guid ownerAccountId);
+    // New optimized query for owner bookings list with filters and paging
+    Task<(List<Booking> Items, int TotalCount)> GetOwnerBookingsFilteredAsync(Guid ownerAccountId, CarOwnerBookingListDTO query);
 }

@@ -11,5 +11,8 @@ namespace CarRental_BE.Services
         Task<CarOwnerRatingSummaryVO> GetRatingSummaryAsync(Guid ownerAccountId);
         Task<IEnumerable<CarOwnerRecentReviewVO>> GetRecentReviewsAsync(Guid ownerAccountId, int limit = 3);
         Task<PaginationResponse<CarOwnerBookingListItemVO>> GetOwnerBookingsAsync(Guid ownerAccountId, CarOwnerBookingListDTO query);
+        Task<CarOwnerEarningsVO> GetEarningsAsync(Guid ownerAccountId);
+        Task<CarOwnerFleetVO> GetFleetAsync(Guid ownerAccountId);
+        Task<List<BookingVO>?> GetUpcommingBookingsByAccountIdAsync(Guid accountId, int limit);
     }
 }
