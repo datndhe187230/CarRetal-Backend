@@ -81,5 +81,13 @@ namespace CarRental_BE.Repositories.Impl
                 .Include(a => a.Role)
                 .FirstOrDefaultAsync(a => a.Id == currentUserId);
         }
+
+        public async Task CreateAccountAsync(Account account, UserProfile userProfile, Wallet wallet)
+        {
+            await _carRentalContext.Accounts.AddAsync(account);
+            await _carRentalContext.UserProfiles.AddAsync(userProfile);
+            await _carRentalContext.Wallets.AddAsync(wallet);
+            await _carRentalContext.SaveChangesAsync();
+        }
     }
 }

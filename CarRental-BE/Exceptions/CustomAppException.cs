@@ -49,4 +49,14 @@
         public UnauthorizedException(string message)
             : base(message, 1005, 401) { }
     }
+
+    //System EXCEPTION - CODE : 99xx
+
+    public class ExternalLoginProviderException : AppException
+    {
+        public ExternalLoginProviderException(string provider, string message)
+            : base($"External login with {provider} failed: {message}", 9901, 500)
+        {
+        }
+    }
 }

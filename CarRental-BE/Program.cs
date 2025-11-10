@@ -13,13 +13,17 @@ using CarRental_BE.Services.Vnpay;
 using CloudinaryDotNet;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using System;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -85,6 +89,7 @@ if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 }
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
+var config = builder.Configuration;
 
 // Add VNPAY service to the container.
 builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
@@ -113,6 +118,12 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
  var configuration = builder.Configuration.GetConnectionString("Redis");
  return ConnectionMultiplexer.Connect(configuration);
 });
+
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.MinimumSameSitePolicy = SameSiteMode.None;  
+});
+
 //Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
@@ -137,14 +148,13 @@ builder.Services.AddAuthentication(options =>
  RoleClaimType = ClaimTypes.Role
  };
 
-
- options.Events = new JwtBearerEvents
- {
- OnMessageReceived = context =>
- {
- var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
- var accessToken = context.Request.Cookies["Access_Token"];
- var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
+                var accessToken = context.Request.Cookies["Access_Token"];
+                var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
 
  // Route-based token selection
  if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
@@ -179,10 +189,16 @@ builder.Services.AddAuthentication(options =>
  message = "Unauthorized. Token is missing, invalid, or expired."
  });
 
- return context.Response.WriteAsync(result);
- }
- };
- });
+                return context.Response.WriteAsync(result);
+            }
+        };
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme) 
+    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.ClientId = config["Google:ClientId"];
+        options.ClientSecret = config["Google:ClientSecret"];
+    });
 //Add VnPay
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 //Register AutoMapper 
@@ -192,9 +208,10 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-app.UseMiddleware<ExceptionMiddleware>();
+//app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseCors();
+app.UseCookiePolicy();
 app.UseAuthentication();
 app.UseAuthorization();
 //booking
