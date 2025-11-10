@@ -14,6 +14,7 @@ using CloudinaryDotNet;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -86,6 +87,7 @@ if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 }
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
+var config = builder.Configuration;
 
 // Add VNPAY service to the container.
 builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
@@ -122,16 +124,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.MinimumSameSitePolicy = SameSiteMode.Lax;
-    options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
-    options.Secure = CookieSecurePolicy.Always;
-});
-
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.HttpOnly = true;
+    options.MinimumSameSitePolicy = SameSiteMode.None;  
 });
 
 //Configure Authentication With JWT Bearer
@@ -141,16 +134,6 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddCookie()
-    .AddGoogle(options =>
-    {
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-        options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.SaveTokens = true;
-        //options.Scope.Add("profile");
-        //options.Scope.Add("email");
-    })
     .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = false;
@@ -212,6 +195,12 @@ builder.Services.AddAuthentication(options =>
                 return context.Response.WriteAsync(result);
             }
         };
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme) 
+    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.ClientId = config["Google:ClientId"];
+        options.ClientSecret = config["Google:ClientSecret"];
     });
 //Add VnPay
 builder.Services.AddScoped<IVnPayService, VnPayService>();

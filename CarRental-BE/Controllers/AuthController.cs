@@ -5,6 +5,7 @@ using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -82,29 +83,27 @@ namespace CarRental_BE.Controllers
 
         [AllowAnonymous]
         [HttpGet("login/google")]
-        public async Task<IActionResult> GoogleLogin([FromQuery] string returnUrl)
+        public async Task<IActionResult> GoogleLogin()
         {
-            var properties = _signInManager.ConfigureExternalAuthenticationProperties("Google", _linkGenerator.GetPathByName(_httpContextAccessor.HttpContext, "GoogleCallback") + $"?returnUrl={returnUrl}");
-
-            return Challenge(properties, ["Google"]);
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback))
+            };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
 
         [AllowAnonymous]
         [HttpGet("google-callback")]
-        public async Task<IActionResult> GoogleCallback([FromQuery] string returnUrl, [FromQuery] string? error)
+        public async Task<IActionResult> GoogleCallback()
         {
-            Console.WriteLine("Google callback invoked.");
+           
+            Console.WriteLine("Google Callback Invoked");
 
-            if (!string.IsNullOrEmpty(error))
-            {
-                return Redirect("http://localhost:3000/signin");
-            }
-
-            var result = await _httpContextAccessor.HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
             if (!result.Succeeded || result?.Principal == null)
             {
-                return Redirect(returnUrl);
+                return BadRequest("DAHELLLL");
 
             }
 
@@ -118,7 +117,7 @@ namespace CarRental_BE.Controllers
                 Expires = DateTime.UtcNow.AddHours(1)
             });
 
-            return Redirect(returnUrl);
+            return Redirect("http://localhost:3000");
         }
     }
 }

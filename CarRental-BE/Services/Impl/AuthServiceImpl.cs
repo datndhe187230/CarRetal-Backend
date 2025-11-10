@@ -5,6 +5,7 @@ using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Repositories;
+using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -98,8 +99,8 @@ namespace CarRental_BE.Services.Impl
             {
                 throw new ExternalLoginProviderException("Google", "ClaimsPrincipal is null");
             }
-
-            var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
+            var claims = claimsPrincipal.Identities.FirstOrDefault()?.Claims;
+            var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "unknown";
 
             if (email == null) 
             {
