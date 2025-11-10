@@ -101,6 +101,11 @@ builder.Services.Configure<EmailSettings>(
 // Register DbContext using connection string from user secrets
 builder.Services.AddDbContext<CarRentalContext>(options =>
  options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
+
+builder.Services.AddIdentity<CarRental_BE.Models.Entities.Account, IdentityRole>()
+    .AddEntityFrameworkStores<CarRentalContext>()
+    .AddDefaultTokenProviders();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
