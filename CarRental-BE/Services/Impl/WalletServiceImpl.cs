@@ -59,6 +59,8 @@ namespace CarRental_BE.Services.Impl
                 var vo = _mapper.Map<WalletVO_Transaction>(t);
                 vo.FormattedAmount = FormatCurrency(t.Amount);
                 vo.FormattedDateTime = FormatDateTime(t.CreatedAt);
+                vo.CarName = t.CarName ?? "N/A";
+                vo.BookingNumber = t.BookingNumber ?? "N/A";
                 return vo;
             }).ToList();
 
@@ -78,6 +80,9 @@ namespace CarRental_BE.Services.Impl
             var transactionVO = _mapper.Map<WalletVO_TransactionDetail>(transaction);
             transactionVO.FormattedAmount = FormatCurrency(transaction.Amount);
             transactionVO.FormattedDateTime = FormatDateTime(transaction.CreatedAt);
+            transactionVO.CarName = transaction.CarName ?? "N/A";
+            transactionVO.BookingNumber = transaction.BookingNumber ?? "N/A";
+            Console.WriteLine("CarName (after mapping): " + transactionVO.CarName);
 
             return transactionVO;
         }

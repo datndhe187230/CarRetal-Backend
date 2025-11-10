@@ -202,7 +202,7 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<List<Booking>> GetBookingsByCarId(Guid carId)
         {
-            return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() &&  b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
+            return await _context.Bookings.Where(b => b.Status !=BookingStatusEnum.cancelled.ToString() && b.Status != BookingStatusEnum.confirmed.ToString() && b.PickUpTime > DateTime.Today).Where(b => b.CarId == carId).ToListAsync();
         }
         public async Task<bool> UpdateBookingStatusAsync(string bookingNumber, string newStatus)
         {
@@ -234,6 +234,146 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
             return await _context.Database.BeginTransactionAsync();
+        }
+
+        // Owner dashboard implementations
+        public async Task<decimal> GetOwnerTotalRevenueAsync(Guid ownerAccountId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b => b.Car.AccountId == ownerAccountId && b.Status == BookingStatusEnum.completed.ToString())
+                .SumAsync(b => (decimal)(b.BasePrice ?? 0));
+        }
+
+        public async Task<int> GetOwnerActiveBookingsCountAsync(Guid ownerAccountId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .CountAsync(b => b.Car.AccountId == ownerAccountId && (b.Status == BookingStatusEnum.in_progress.ToString() || b.Status == BookingStatusEnum.confirmed.ToString()));
+        }
+
+        public async Task<int> GetOwnerTotalCustomersCountAsync(Guid ownerAccountId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b => b.Car.AccountId == ownerAccountId)
+                .Select(b => b.AccountId)
+                .Distinct()
+                .CountAsync();
+        }
+
+        public async Task<IEnumerable<MonthlyRevenueVO>> GetOwnerMonthlyRevenueAsync(Guid ownerAccountId, int year)
+        {
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Where(b => b.Car.AccountId == ownerAccountId && b.CreatedAt.HasValue && b.CreatedAt.Value.Year == year && b.Status == BookingStatusEnum.completed.ToString())
+                .GroupBy(b => b.CreatedAt!.Value.Month)
+                .Select(g => new MonthlyRevenueVO
+                {
+                    Month = g.Key.ToString(),
+                    Total = g.Sum(b => (decimal)(b.BasePrice ?? 0))
+                })
+                .ToListAsync();
+        }
+
+        public async Task<decimal> GetOwnerFleetUtilizationAsync(Guid ownerAccountId)
+        {
+            // naive approximation: percentage of owner's cars that have at least one active/confirmed booking today
+            var ownerCarIds = await _context.Cars.Where(c => c.AccountId == ownerAccountId).Select(c => c.Id).ToListAsync();
+            if (!ownerCarIds.Any()) return 0m;
+            var activeCars = await _context.Bookings
+                .Where(b => ownerCarIds.Contains(b.CarId) && (b.Status == BookingStatusEnum.in_progress.ToString() || b.Status == BookingStatusEnum.confirmed.ToString()))
+                .Select(b => b.CarId)
+                .Distinct()
+                .CountAsync();
+            return Math.Round(((decimal)activeCars / ownerCarIds.Count) * 100m, 1);
+        }
+
+        public async Task<IQueryable<Booking>> GetAllBookingsByCarOwnerAsync(Guid ownerAccountId)
+        {
+            return _context.Bookings
+                .Include(b => b.Car)
+                .Include(b => b.Transactions)
+                .Where(b => b.Car.AccountId == ownerAccountId)
+                .AsNoTracking()
+                .AsQueryable();
+        }
+
+        public async Task<(List<Booking> Items, int TotalCount)> GetOwnerBookingsFilteredAsync(Guid ownerAccountId, CarOwnerBookingListDTO query)
+        {
+            var q = _context.Bookings
+                .Include(b => b.Car)
+                .Include(b => b.Transactions)
+                .Where(b => b.Car.AccountId == ownerAccountId)
+                .AsQueryable();
+
+            // Search
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var term = query.Search.Trim().ToLower();
+                q = q.Where(b =>
+                    (b.BookingNumber != null && b.BookingNumber.ToLower().Contains(term)) ||
+                    (b.DriverFullName != null && b.DriverFullName.ToLower().Contains(term)) ||
+                    (b.DriverEmail != null && b.DriverEmail.ToLower().Contains(term)) ||
+                    (b.DriverPhoneNumber != null && b.DriverPhoneNumber.ToLower().Contains(term)));
+            }
+            // Car name filter
+            if (!string.IsNullOrWhiteSpace(query.CarName))
+            {
+                var carTerm = query.CarName.Trim().ToLower();
+                q = q.Where(b => (b.Car.Brand + " " + b.Car.Model).ToLower().Contains(carTerm) || b.Car.Model.ToLower().Contains(carTerm));
+            }
+            // Statuses
+            if (query.Status != null && query.Status.Any())
+            {
+                var wanted = query.Status.Select(s => s.Trim().ToLower()).ToList();
+                q = q.Where(b => b.Status != null && wanted.Contains(b.Status.ToLower()));
+            }
+            // Date overlap
+            if (query.FromDate.HasValue || query.ToDate.HasValue)
+            {
+                var from = query.FromDate?.Date ?? DateTime.MinValue.Date;
+                var to = (query.ToDate?.Date ?? DateTime.MaxValue.Date).AddDays(1).AddTicks(-1);
+                q = q.Where(b => b.PickUpTime.HasValue && b.DropOffTime.HasValue && b.PickUpTime <= to && b.DropOffTime >= from);
+            }
+
+            // Sorting
+            var sortBy = (query.SortBy ?? string.Empty).ToLower();
+            var sortDir = (query.SortDirection ?? "desc").ToLower();
+            bool asc = sortDir == "asc";
+            IOrderedQueryable<Booking>? ordered = null;
+            if (sortBy == "pickupdate")
+            {
+                ordered = asc ? q.OrderBy(b => b.PickUpTime) : q.OrderByDescending(b => b.PickUpTime);
+            }
+            else if (sortBy == "returndate")
+            {
+                ordered = asc ? q.OrderBy(b => b.DropOffTime) : q.OrderByDescending(b => b.DropOffTime);
+            }
+            else if (sortBy == "totalamount")
+            {
+                ordered = asc ? q.OrderBy(b => (b.BasePrice ?? 0) + (b.Deposit ?? 0)) : q.OrderByDescending(b => (b.BasePrice ?? 0) + (b.Deposit ?? 0));
+            }
+            else if (sortBy == "status")
+            {
+                ordered = asc ? q.OrderBy(b => b.Status) : q.OrderByDescending(b => b.Status);
+            }
+            else
+            {
+                ordered = q
+                    .OrderBy(b => b.Status == BookingStatusEnum.confirmed.ToString() ? 0
+                                    : b.Status == BookingStatusEnum.in_progress.ToString() ? 1
+                                    : b.Status == BookingStatusEnum.pending_payment.ToString() ? 2
+                                    : b.Status == BookingStatusEnum.pending_deposit.ToString() ? 3
+                                    : 4)
+                    .ThenByDescending(b => b.PickUpTime);
+            }
+
+            int totalCount = await ordered.CountAsync();
+            int page = query.Page < 1 ? 1 : query.Page;
+            int pageSize = query.PageSize < 1 ? 10 : query.PageSize > 100 ? 100 : query.PageSize;
+            var items = await ordered.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return (items, totalCount);
         }
     }
 }

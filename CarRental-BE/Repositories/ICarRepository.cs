@@ -13,7 +13,6 @@ namespace CarRental_BE.Repositories
         Task<Car?> GetByIdWithBookings(Guid carId);
         Task<Car?> GetByIdAsync(Guid id);
 
-
         Task<(List<Car> cars, int totalCount)> SearchCar(SearchDTO searchDTO, int pageNumber, int pageSize);
 
         Task<Car?> AddCar(AddCarDTO addCarDTO);

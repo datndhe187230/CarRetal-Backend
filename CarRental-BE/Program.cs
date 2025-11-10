@@ -41,7 +41,7 @@ builder.Services.AddControllers();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    options.SuppressModelStateInvalidFilter = true;
+ options.SuppressModelStateInvalidFilter = true;
 });
 
 
@@ -65,14 +65,16 @@ builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
 builder.Services.AddScoped<IFeedbackService, FeedbackServiceImpl>();
 builder.Services.AddScoped<IChatbotService, ChatbotServiceImpl>();
 builder.Services.AddScoped<IFeedbackReportService, FeedbackReportServiceImpl>();
+// Car owner dashboard service
+builder.Services.AddScoped<ICarOwnerDashboardService, CarOwnerDashboardServiceImpl>();
 
 //Configure Elasticsearch settings (local)
 var settings = new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
-    .CertificateFingerprint("d14784d90529b16a164b3e178eb770b02664afb1322a3225ca4145eef7d6c270")
-    .Authentication(new BasicAuthentication("elastic", "MRil5d*w9Q__xNGV+OFQ"))
-    .EnableDebugMode()
-    .PrettyJson()
-    .RequestTimeout(TimeSpan.FromMinutes(2));
+ .CertificateFingerprint("d14784d90529b16a164b3e178eb770b02664afb1322a3225ca4145eef7d6c270")
+ .Authentication(new BasicAuthentication("elastic", "MRil5d*w9Q__xNGV+OFQ"))
+ .EnableDebugMode()
+ .PrettyJson()
+ .RequestTimeout(TimeSpan.FromMinutes(2));
 
 var client = new ElasticsearchClient(settings);
 
@@ -83,7 +85,7 @@ var apiSecret = builder.Configuration.GetValue<string>("CloudinarySettings:ApiSe
 
 if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 {
-    throw new ArgumentException("Please specify Cloudinary account details!");
+ throw new ArgumentException("Please specify Cloudinary account details!");
 }
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
@@ -94,23 +96,18 @@ builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
 
 // Configure email settings
 builder.Services.Configure<EmailSettings>(
-    builder.Configuration.GetSection("EmailSettings"));
+ builder.Configuration.GetSection("EmailSettings"));
 
 // Register DbContext using connection string from user secrets
 builder.Services.AddDbContext<CarRentalContext>(options =>
-    options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
-
-builder.Services.AddIdentity<CarRental_BE.Models.Entities.Account, IdentityRole>()
-    .AddEntityFrameworkStores<CarRentalContext>()
-    .AddDefaultTokenProviders();
-
+ options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(
-        policy => policy.WithOrigins("http://localhost:3000")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials());
+ options.AddDefaultPolicy(
+ policy => policy.WithOrigins("http://localhost:3000")
+ .AllowAnyHeader()
+ .AllowAnyMethod()
+ .AllowCredentials());
 });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -118,8 +115,8 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    var configuration = builder.Configuration.GetConnectionString("Redis");
-    return ConnectionMultiplexer.Connect(configuration);
+ var configuration = builder.Configuration.GetConnectionString("Redis");
+ return ConnectionMultiplexer.Connect(configuration);
 });
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
@@ -130,26 +127,26 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 //Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+ options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+ options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+ options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = false;
-        options.SaveToken = true;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
+ .AddJwtBearer(options =>
+ {
+ options.RequireHttpsMetadata = false;
+ options.SaveToken = true;
+ options.TokenValidationParameters = new TokenValidationParameters
+ {
+ ValidateIssuer = true,
+ ValidateAudience = true,
+ ValidateLifetime = true,
+ ValidateIssuerSigningKey = true,
+ ValidIssuer = builder.Configuration["Jwt:Issuer"],
+ ValidAudience = builder.Configuration["Jwt:Audience"],
+ IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
 
-            RoleClaimType = ClaimTypes.Role
-        };
+ RoleClaimType = ClaimTypes.Role
+ };
 
         options.Events = new JwtBearerEvents
         {
@@ -159,38 +156,38 @@ builder.Services.AddAuthentication(options =>
                 var accessToken = context.Request.Cookies["Access_Token"];
                 var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
 
-                // Route-based token selection
-                if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
-                {
-                    if (!string.IsNullOrEmpty(forgotPasswordToken))
-                    {
-                        Console.WriteLine(forgotPasswordToken);
-                        context.Token = forgotPasswordToken;
-                    }
-                }
-                else
-                {
-                    if (!string.IsNullOrEmpty(accessToken))
-                    {
-                        context.Token = accessToken;
-                    }
-                }
+ // Route-based token selection
+ if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
+ {
+ if (!string.IsNullOrEmpty(forgotPasswordToken))
+ {
+ Console.WriteLine(forgotPasswordToken);
+ context.Token = forgotPasswordToken;
+ }
+ }
+ else
+ {
+ if (!string.IsNullOrEmpty(accessToken))
+ {
+ context.Token = accessToken;
+ }
+ }
 
-                return Task.CompletedTask;
-            },
+ return Task.CompletedTask;
+ },
 
-            OnChallenge = context =>
-            {
-                context.HandleResponse();
+ OnChallenge = context =>
+ {
+ context.HandleResponse();
 
-                context.Response.StatusCode = 401;
-                context.Response.ContentType = "application/json";
+ context.Response.StatusCode =401;
+ context.Response.ContentType = "application/json";
 
-                var result = JsonSerializer.Serialize(new
-                {
-                    code = 401,
-                    message = "Unauthorized. Token is missing, invalid, or expired."
-                });
+ var result = JsonSerializer.Serialize(new
+ {
+ code =401,
+ message = "Unauthorized. Token is missing, invalid, or expired."
+ });
 
                 return context.Response.WriteAsync(result);
             }
@@ -222,24 +219,24 @@ app.UseAuthorization();
 
 app.Use(async (context, next) =>
 {
-    await next();
+ await next();
 
-    if (context.Response.StatusCode == 403)
-    {
-        context.Response.ContentType = "application/json";
-        var result = JsonSerializer.Serialize(new
-        {
-            code = 403,
-            message = "Forbidden: You do not have permission to access this resource."
-        });
-        await context.Response.WriteAsync(result);
-    }
+ if (context.Response.StatusCode ==403)
+ {
+ context.Response.ContentType = "application/json";
+ var result = JsonSerializer.Serialize(new
+ {
+ code =403,
+ message = "Forbidden: You do not have permission to access this resource."
+ });
+ await context.Response.WriteAsync(result);
+ }
 });
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+ app.MapOpenApi();
 }
 
 //booking

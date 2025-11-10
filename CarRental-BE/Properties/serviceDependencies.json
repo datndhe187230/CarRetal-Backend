@@ -15,7 +15,7 @@
 
   "ConnectionStrings": {
     "DatabaseConnection": "Server=car-rental.cl22ku0yy1qy.ap-southeast-2.rds.amazonaws.com;Database=CarRental;User Id=admin;Password=quanquan3007;TrustServerCertificate=True;",
-    "Redis": "localhost:6379"
+    "Redis": "localhost:6379;abortConnect=false "
   },
 
   "EmailSettings": {

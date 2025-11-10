@@ -11,7 +11,7 @@
         ]
       }
     },
-    "http": {
+    "https": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
@@ -19,13 +19,13 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5227"
     },
-    "https": {
+    "http": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7143;http://localhost:5227"
+      "applicationUrl": "http://localhost:5227;https://localhost:7143"
     },
     "IIS Express": {
       "commandName": "IISExpress",
