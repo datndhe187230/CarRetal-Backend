@@ -67,12 +67,25 @@ namespace CarRental_BE.Repositories.Impl
                 });
 
             var totalRecords = await query.CountAsync();
+
+            var totalPages = (int)Math.Ceiling((double)totalRecords / request.PageSize);
+
+            var validPageNumber = request.PageNumber;
+            if (validPageNumber > totalPages && totalPages > 0)
+            {
+                validPageNumber = totalPages;
+            }
+            if (validPageNumber < 1)
+            {
+                validPageNumber = 1;
+            }
+
             var items = await query
-                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Skip((validPageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            return new PaginationResponse<FeedbackItemDTO>(items, totalRecords, request.PageNumber, request.PageSize);
+            return new PaginationResponse<FeedbackItemDTO>(items, totalRecords, validPageNumber, request.PageSize);
         }
 
     }
