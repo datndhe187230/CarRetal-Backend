@@ -41,7 +41,7 @@ builder.Services.AddControllers();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
- options.SuppressModelStateInvalidFilter = true;
+    options.SuppressModelStateInvalidFilter = true;
 });
 
 
@@ -85,7 +85,7 @@ var apiSecret = builder.Configuration.GetValue<string>("CloudinarySettings:ApiSe
 
 if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 {
- throw new ArgumentException("Please specify Cloudinary account details!");
+    throw new ArgumentException("Please specify Cloudinary account details!");
 }
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
@@ -101,13 +101,18 @@ builder.Services.Configure<EmailSettings>(
 // Register DbContext using connection string from user secrets
 builder.Services.AddDbContext<CarRentalContext>(options =>
  options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
+
+builder.Services.AddIdentity<CarRental_BE.Models.Entities.Account, IdentityRole>()
+    .AddEntityFrameworkStores<CarRentalContext>()
+    .AddDefaultTokenProviders();
+
 builder.Services.AddCors(options =>
 {
- options.AddDefaultPolicy(
- policy => policy.WithOrigins("http://localhost:3000")
- .AllowAnyHeader()
- .AllowAnyMethod()
- .AllowCredentials());
+    options.AddDefaultPolicy(
+    policy => policy.WithOrigins("http://localhost:3000")
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials());
 });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -115,85 +120,85 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
- var configuration = builder.Configuration.GetConnectionString("Redis");
- return ConnectionMultiplexer.Connect(configuration);
+    var configuration = builder.Configuration.GetConnectionString("Redis");
+    return ConnectionMultiplexer.Connect(configuration);
 });
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.MinimumSameSitePolicy = SameSiteMode.None;  
+    options.MinimumSameSitePolicy = SameSiteMode.None;
 });
 
 //Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
- options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
- options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
- options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
  .AddJwtBearer(options =>
  {
- options.RequireHttpsMetadata = false;
- options.SaveToken = true;
- options.TokenValidationParameters = new TokenValidationParameters
- {
- ValidateIssuer = true,
- ValidateAudience = true,
- ValidateLifetime = true,
- ValidateIssuerSigningKey = true,
- ValidIssuer = builder.Configuration["Jwt:Issuer"],
- ValidAudience = builder.Configuration["Jwt:Audience"],
- IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
+     options.RequireHttpsMetadata = false;
+     options.SaveToken = true;
+     options.TokenValidationParameters = new TokenValidationParameters
+     {
+         ValidateIssuer = true,
+         ValidateAudience = true,
+         ValidateLifetime = true,
+         ValidateIssuerSigningKey = true,
+         ValidIssuer = builder.Configuration["Jwt:Issuer"],
+         ValidAudience = builder.Configuration["Jwt:Audience"],
+         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
 
- RoleClaimType = ClaimTypes.Role
- };
+         RoleClaimType = ClaimTypes.Role
+     };
 
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
-                var accessToken = context.Request.Cookies["Access_Token"];
-                var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
+     options.Events = new JwtBearerEvents
+     {
+         OnMessageReceived = context =>
+         {
+             var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
+             var accessToken = context.Request.Cookies["Access_Token"];
+             var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
 
- // Route-based token selection
- if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
- {
- if (!string.IsNullOrEmpty(forgotPasswordToken))
- {
- Console.WriteLine(forgotPasswordToken);
- context.Token = forgotPasswordToken;
- }
- }
- else
- {
- if (!string.IsNullOrEmpty(accessToken))
- {
- context.Token = accessToken;
- }
- }
+             // Route-based token selection
+             if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
+             {
+                 if (!string.IsNullOrEmpty(forgotPasswordToken))
+                 {
+                     Console.WriteLine(forgotPasswordToken);
+                     context.Token = forgotPasswordToken;
+                 }
+             }
+             else
+             {
+                 if (!string.IsNullOrEmpty(accessToken))
+                 {
+                     context.Token = accessToken;
+                 }
+             }
 
- return Task.CompletedTask;
- },
+             return Task.CompletedTask;
+         },
 
- OnChallenge = context =>
- {
- context.HandleResponse();
+         OnChallenge = context =>
+         {
+             context.HandleResponse();
 
- context.Response.StatusCode =401;
- context.Response.ContentType = "application/json";
+             context.Response.StatusCode = 401;
+             context.Response.ContentType = "application/json";
 
- var result = JsonSerializer.Serialize(new
- {
- code =401,
- message = "Unauthorized. Token is missing, invalid, or expired."
- });
+             var result = JsonSerializer.Serialize(new
+             {
+                 code = 401,
+                 message = "Unauthorized. Token is missing, invalid, or expired."
+             });
 
-                return context.Response.WriteAsync(result);
-            }
-        };
-    })
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme) 
+             return context.Response.WriteAsync(result);
+         }
+     };
+ })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
     {
         options.ClientId = config["Google:ClientId"];
@@ -219,24 +224,24 @@ app.UseAuthorization();
 
 app.Use(async (context, next) =>
 {
- await next();
+    await next();
 
- if (context.Response.StatusCode ==403)
- {
- context.Response.ContentType = "application/json";
- var result = JsonSerializer.Serialize(new
- {
- code =403,
- message = "Forbidden: You do not have permission to access this resource."
- });
- await context.Response.WriteAsync(result);
- }
+    if (context.Response.StatusCode == 403)
+    {
+        context.Response.ContentType = "application/json";
+        var result = JsonSerializer.Serialize(new
+        {
+            code = 403,
+            message = "Forbidden: You do not have permission to access this resource."
+        });
+        await context.Response.WriteAsync(result);
+    }
 });
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
- app.MapOpenApi();
+    app.MapOpenApi();
 }
 
 //booking
