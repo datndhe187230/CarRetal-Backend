@@ -21,17 +21,11 @@ namespace CarRental_BE.Controllers
     {
         private readonly IAuthService _authService;
         private readonly IEmailService _emailService;
-        private readonly LinkGenerator _linkGenerator;
-        private readonly SignInManager<Account> _signInManager;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AuthController(IAuthService authService, IEmailService emailService, SignInManager<Account> signInManager, LinkGenerator linkGenerator, IHttpContextAccessor httpContextAccessor)
+        public AuthController(IAuthService authService, IEmailService emailService)
         {
             _authService = authService;
             _emailService = emailService;
-            _signInManager = signInManager;
-            _httpContextAccessor = httpContextAccessor;
-            _linkGenerator = linkGenerator;
         }
 
         [AllowAnonymous]
@@ -89,7 +83,7 @@ namespace CarRental_BE.Controllers
             {
                 RedirectUri = Url.Action(nameof(GoogleCallback))
             };
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+            return Challenge(properties, "Google");
         }
 
         [AllowAnonymous]
@@ -99,7 +93,7 @@ namespace CarRental_BE.Controllers
            
             Console.WriteLine("Google Callback Invoked");
 
-            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            var result = await HttpContext.AuthenticateAsync("GoogleCookieScheme");
 
             if (!result.Succeeded || result?.Principal == null)
             {
