@@ -207,7 +207,6 @@ namespace CarRental_BE.Services.Impl
             // Only pull statuses relevant to fleet utilization
             var query = new CarOwnerBookingListDTO
             {
-                Status = new List<string> { BookingStatusEnum.confirmed.ToString(), BookingStatusEnum.pending_deposit.ToString(), BookingStatusEnum.in_progress.ToString(), BookingStatusEnum.cancelled.ToString() },
                 Page = 1,
                 PageSize = 10000
             };
@@ -235,7 +234,7 @@ namespace CarRental_BE.Services.Impl
             }
 
             int fleetSize = carList.Count;
-            int activeFleet = carList.Count(c => c.Status?.ToLower() == "available" || c.Status?.ToLower() == "busy");
+            int activeFleet = carList.Count(c => c.Status?.ToLower() == "verified");
             int inactiveFleet = fleetSize - activeFleet;
 
             int totalBookings = total;
@@ -243,7 +242,7 @@ namespace CarRental_BE.Services.Impl
             .Select(b => (b.DropOffTime!.Value - b.PickUpTime!.Value).TotalDays)
             .DefaultIfEmpty(0)
             .Average();
-            int upcoming = bookings.Count(b => b.Status == BookingStatusEnum.confirmed.ToString() || b.Status == BookingStatusEnum.pending_deposit.ToString());
+            int upcoming = bookings.Count(b => b.Status == BookingStatusEnum.confirmed.ToString() || b.Status == BookingStatusEnum.pending_deposit.ToString() || b.Status == BookingStatusEnum.in_progress.ToString());
             int cancelled = bookings.Count(b => b.Status == BookingStatusEnum.cancelled.ToString());
             decimal cancellationRate = totalBookings > 0 ? (decimal)cancelled / totalBookings : 0m;
             decimal utilization = activeFleet > 0 ? Math.Round(((decimal)upcoming / activeFleet), 2) : 0m;
