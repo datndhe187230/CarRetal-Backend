@@ -138,7 +138,7 @@ namespace CarRental_BE.Services.Impl
 
                 await _accountRepository.CreateAccountAsync(newAccount, newUserProfile, newWallet);
 
-                userAccount = newAccount;
+                userAccount = await _accountRepository.getAccountByEmailWithRole(email);
 
             } 
 
@@ -157,9 +157,9 @@ namespace CarRental_BE.Services.Impl
                     Subject = new ClaimsIdentity(new[]
                     {
                         new Claim(JwtRegisteredClaimNames.Email, email),
-                        new Claim(ClaimTypes.Role, roleAccount.Name!),
-                        new Claim("id", idAccount.ToString()!),
-                        new Claim("fullname", fullName ?? string.Empty)
+                        //new Claim(ClaimTypes.Role, roleAccount.Name!),
+                        //new Claim("id", idAccount.ToString()!),
+                        //new Claim("fullname", fullName ?? string.Empty)
 
                     }),
                     Expires = tokenExpiryTimeStamp,

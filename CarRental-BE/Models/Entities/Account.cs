@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace CarRental_BE.Models.Entities;
 
-public partial class Account : IdentityUser
+public partial class Account
 {
     public Guid Id { get; set; }
 

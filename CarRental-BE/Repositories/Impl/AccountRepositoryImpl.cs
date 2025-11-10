@@ -20,8 +20,8 @@ namespace CarRental_BE.Repositories.Impl
                 .Include(a => a.Role)
                 .FirstOrDefaultAsync(a => a.Email == email);
 
-            if (account == null)
-                throw new UserNotFoundException(email);
+            //if (account == null)
+            //    throw new UserNotFoundException(email);
 
             return account;
         }

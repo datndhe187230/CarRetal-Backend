@@ -102,10 +102,6 @@ builder.Services.Configure<EmailSettings>(
 builder.Services.AddDbContext<CarRentalContext>(options =>
  options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
 
-builder.Services.AddIdentity<CarRental_BE.Models.Entities.Account, IdentityRole>()
-    .AddEntityFrameworkStores<CarRentalContext>()
-    .AddDefaultTokenProviders();
-
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
@@ -198,12 +194,15 @@ builder.Services.AddAuthentication(options =>
          }
      };
  })
-    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
-    {
-        options.ClientId = config["Google:ClientId"];
-        options.ClientSecret = config["Google:ClientSecret"];
-    });
+    .AddCookie("GoogleCookieScheme")
+
+// Google login scheme, explicitly tied to cookie sign-in
+.AddGoogle("Google", options =>
+{
+    options.ClientId = builder.Configuration["Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+    options.SignInScheme = "GoogleCookieScheme"; // this is crucial
+});
 //Add VnPay
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 //Register AutoMapper 
