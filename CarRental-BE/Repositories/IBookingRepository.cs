@@ -26,6 +26,5 @@ public interface IBookingRepository
     Task<List<Booking>> GetBookingsByCarId(Guid carId);
     Task<bool> UpdateBookingStatusAsync(string bookingNumber, string newStatus);
     Task<List<Booking>> GetBookingsByCarIdAsync(Guid carId);
-}
     Task<IDbContextTransaction> BeginTransactionAsync();
 }

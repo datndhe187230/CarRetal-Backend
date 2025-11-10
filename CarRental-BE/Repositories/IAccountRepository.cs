@@ -12,5 +12,6 @@ namespace CarRental_BE.Repositories
         Task<Account> GetAccountByIdAsync(Guid id);
         Task UpdateAccountAsync(Account account);
         Task<Account> GetCurrentUserAsync(Guid currentUserId);
+        Task CreateAccountAsync(Account account, UserProfile userProfile, Wallet wallet);
     }
 }
