@@ -1,5 +1,5 @@
 ﻿using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Models.VO.AdminManagement;
 using CarRental_BE.Models.VO.User;
 

@@ -1,8 +1,8 @@
-﻿using CarRental_BE.Data;
-using CarRental_BE.Models.Common;
+﻿using CarRental_BE.Models.Common;
 using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using CarRental_BE.Models.NewEntities;
+using CarRental_BE.Data;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -15,11 +15,11 @@ namespace CarRental_BE.Repositories.Impl
             _context = context;
         }
 
-        public async Task<Feedback> AddFeedbackAsync(Feedback feedback)
+        public async Task<Review> AddFeedbackAsync(Review review)
         {
-            _context.Feedbacks.Add(feedback);
+            _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
-            return feedback;
+            return review;
         }
 
         public async Task<Booking> GetBookingAsync(string bookingNumber)
@@ -30,18 +30,18 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<FeedbackSummaryDTO> GetFeedbackSummaryByUserIdAsync(Guid userId)
         {
-            var feedbacks = await _context.Feedbacks
-                .Include(f => f.BookingNumberNavigation)
+            var reviews = await _context.Reviews
+                .Include(r => r.BookingNumberNavigation)
                 .ThenInclude(b => b.Car)
-                .Where(f => f.BookingNumberNavigation != null && f.BookingNumberNavigation.Car != null && f.BookingNumberNavigation.Car.AccountId == userId)
+                .Where(r => r.ToAccountId == userId)
                 .ToListAsync();
 
             var summary = new FeedbackSummaryDTO
             {
-                AverageRating = feedbacks.Any() ? Math.Round(feedbacks.Average(f => f.Rating ?? 0), 1) : 0,
-                TotalRatings = feedbacks.Count,
-                RatingDistribution = feedbacks
-                    .GroupBy(f => f.Rating ?? 0)
+                AverageRating = reviews.Any() ? Math.Round(reviews.Average(f => (int)f.Rating), 1) : 0,
+                TotalRatings = reviews.Count,
+                RatingDistribution = reviews
+                    .GroupBy(f => (int)f.Rating)
                     .ToDictionary(g => g.Key, g => g.Count())
             };
 
@@ -50,20 +50,20 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<PaginationResponse<FeedbackItemDTO>> GetFeedbackItemsByUserIdAsync(Guid userId, PaginationRequest request)
         {
-            var query = _context.Feedbacks
-                .Include(f => f.BookingNumberNavigation)
+            var query = _context.Reviews
+                .Include(r => r.BookingNumberNavigation)
                 .ThenInclude(b => b.Car)
-                .Where(f => f.BookingNumberNavigation != null && f.BookingNumberNavigation.Car != null && f.BookingNumberNavigation.Car.AccountId == userId)
-                .OrderByDescending(f => f.CreateAt)
-                .Select(f => new FeedbackItemDTO
+                .Where(r => r.ToAccountId == userId)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new FeedbackItemDTO
                 {
-                    CarName = f.BookingNumberNavigation.Car.Brand + " " + f.BookingNumberNavigation.Car.Model,
-                    CarImageUrl = f.BookingNumberNavigation.Car.CarImageRight,
-                    Comment = f.Comment,
-                    Rating = f.Rating.GetValueOrDefault(),
-                    CreatedAt = f.CreateAt.GetValueOrDefault(),
-                    PickUpTime = f.BookingNumberNavigation.PickUpTime.GetValueOrDefault(),
-                    DropOffTime = f.BookingNumberNavigation.DropOffTime.GetValueOrDefault(),
+                    CarName = r.BookingNumberNavigation.Car.Brand + " " + r.BookingNumberNavigation.Car.Model,
+                    CarImageUrl = r.BookingNumberNavigation.Car.CarImages.Where(i => i.ImageType == "right").Select(i => i.Uri).FirstOrDefault(),
+                    Comment = r.Comment,
+                    Rating = r.Rating,
+                    CreatedAt = r.CreatedAt,
+                    PickUpTime = r.BookingNumberNavigation.PickUpTime,
+                    DropOffTime = r.BookingNumberNavigation.DropOffTime,
                 });
 
             var totalRecords = await query.CountAsync();
@@ -87,6 +87,5 @@ namespace CarRental_BE.Repositories.Impl
 
             return new PaginationResponse<FeedbackItemDTO>(items, totalRecords, validPageNumber, request.PageSize);
         }
-
     }
 }

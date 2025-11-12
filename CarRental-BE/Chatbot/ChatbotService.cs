@@ -1,4 +1,4 @@
-﻿using CarRental_BE.Models.Entities;
+﻿using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Repositories;
 using System.Globalization;
 using System.Text;

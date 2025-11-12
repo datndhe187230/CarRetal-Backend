@@ -1,49 +1,47 @@
 ﻿using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Models.VO.Booking;
 using CarRental_BE.Models.VO.Transaction;
+using NewBooking = CarRental_BE.Models.NewEntities.Booking;
 
 public static class BookingMapper
 {
-
-    public static BookingVO ToBookingVO(Booking booking)
+    public static BookingVO ToBookingVO(NewBooking booking)
     {
-        var numberOfDays = (booking.DropOffTime - booking.PickUpTime)?.Days ?? 0;
-        var totalPrice = numberOfDays * (booking.BasePrice ?? 0);
-
+        var numberOfDays = (booking.DropOffTime - booking.PickUpTime).Days;
+        var totalPrice = numberOfDays * (long)(booking.BasePriceSnapshotCents ??0);
         return new BookingVO
         {
             BookingNumber = booking.BookingNumber,
             CarName = $"{booking.Car?.Brand} {booking.Car?.Model}" ?? "Unknown",
             PickupDate = booking.PickUpTime,
             ReturnDate = booking.DropOffTime,
-            PickUpLocation = booking.PickUpLocation,
-            DropOffLocation = booking.DropOffLocation,
-            BasePrice = booking.BasePrice,
-            Deposit = booking.Deposit,
+            PickUpLocation = booking.PickUpAddress?.CityProvince,
+            DropOffLocation = booking.DropOffAddress?.CityProvince,
+            BasePrice = (long?)booking.BasePriceSnapshotCents,
+            Deposit = (long?)booking.DepositSnapshotCents,
             TotalPrice = totalPrice,
             NumberOfDays = numberOfDays,
-            PaymentType = booking.PaymentType,
+            PaymentType = booking.PaymentMethod,
             Status = booking.Status,
             CreatedAt = booking.CreatedAt,
-            CarImageFront = booking.Car?.CarImageFront,
-            CarImageBack = booking.Car?.CarImageBack,
-            CarImageLeft = booking.Car?.CarImageLeft,
-            CarImageRight = booking.Car?.CarImageRight
+            CarImageFront = booking.Car?.CarImages.Where(i => i.ImageType == "front").Select(i => i.Uri).FirstOrDefault(),
+            CarImageBack = booking.Car?.CarImages.Where(i => i.ImageType == "back").Select(i => i.Uri).FirstOrDefault(),
+            CarImageLeft = booking.Car?.CarImages.Where(i => i.ImageType == "left").Select(i => i.Uri).FirstOrDefault(),
+            CarImageRight = booking.Car?.CarImages.Where(i => i.ImageType == "right").Select(i => i.Uri).FirstOrDefault()
         };
     }
 
-    public static BookingDetailVO ToBookingDetailVO(Booking booking)
+    public static BookingDetailVO ToBookingDetailVO(NewBooking booking)
     {
         var car = booking.Car;
-        var account = booking.Account;
+        var account = booking.RenterAccount;
         var userProfile = account?.UserProfile;
         var transactions = booking.Transactions?.Select(t => new TransactionVO
         {
-            Amount = t.Amount,
-            Message = t.Message,
+            Amount = (long)t.AmountCents,
+            Message = t.Description,
             CreatedAt = t.CreatedAt,
             Status = t.Status,
             Type = t.Type
@@ -53,116 +51,93 @@ public static class BookingMapper
         {
             BookingNumber = booking.BookingNumber,
             CarName = $"{car?.Brand} {car?.Model}",
-            CarId = car.Id,
+            CarId = car.CarId,
             Status = booking.Status,
             PickUpTime = booking.PickUpTime,
             DropOffTime = booking.DropOffTime,
             AccountEmail = account?.Email,
-            PickUpLocation = booking?.PickUpLocation,
-            DropOffLocation = booking?.DropOffLocation,
-
-            // Renter's information
+            PickUpLocation = booking.PickUpAddress?.CityProvince,
+            DropOffLocation = booking.DropOffAddress?.CityProvince,
             RenterFullName = userProfile?.FullName,
-            RenterDob = userProfile?.Dob,
+            RenterDob = userProfile?.Dob.HasValue == true ? userProfile.Dob : null,
             RenterPhoneNumber = userProfile?.PhoneNumber,
             RenterEmail = account?.Email,
             RenterNationalId = userProfile?.NationalId,
             RenterDrivingLicenseUri = userProfile?.DrivingLicenseUri,
-            RenterHouseNumberStreet = userProfile?.HouseNumberStreet,
-            RenterWard = userProfile?.Ward,
-            RenterDistrict = userProfile?.District,
-            RenterCityProvince = userProfile?.CityProvince,
+            RenterHouseNumberStreet = userProfile?.Address?.HouseNumberStreet,
+            RenterWard = userProfile?.Address?.Ward,
+            RenterDistrict = userProfile?.Address?.District,
+            RenterCityProvince = userProfile?.Address?.CityProvince,
 
-            // Driver's information
-            DriverFullName = booking.DriverFullName,
-            DriverDob = booking.DriverDob,
-            DriverPhoneNumber = booking.DriverPhoneNumber,
-            DriverEmail = booking.DriverEmail,
-            DriverNationalId = booking.DriverNationalId,
-            DriverDrivingLicenseUri = booking.DriverDrivingLicenseUri,
-            DriverHouseNumberStreet = booking.DriverHouseNumberStreet,
-            DriverWard = booking.DriverWard,
-            DriverDistrict = booking.DriverDistrict,
-            DriverCityProvince = booking.DriverCityProvince,
+            // Driver's information (first driver)
+            DriverFullName = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().FullName : null,
+            DriverDob = booking.BookingDrivers.FirstOrDefault() != null ? (DateOnly?)booking.BookingDrivers.First().Dob : null,
+            DriverPhoneNumber = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().PhoneNumber : null,
+            DriverEmail = null,
+            DriverNationalId = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().NationalId : null,
+            DriverDrivingLicenseUri = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().DrivingLicenseUri : null,
+            DriverHouseNumberStreet = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().Address?.HouseNumberStreet : null,
+            DriverWard = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().Address?.Ward : null,
+            DriverDistrict = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().Address?.District : null,
+            DriverCityProvince = booking.BookingDrivers.FirstOrDefault() != null ? booking.BookingDrivers.First().Address?.CityProvince : null,
 
-            //check renter is driver
-            isRenterSameAsDriver =
-                        booking.DriverFullName.Trim() == userProfile?.FullName.Trim() &&
-                        booking.DriverDob == userProfile?.Dob &&
-                        booking.DriverPhoneNumber == userProfile?.PhoneNumber &&
-                        booking.DriverEmail == account?.Email &&
-                        booking.DriverNationalId == userProfile?.NationalId &&
-                        //booking.DriverDrivingLicenseUri == userProfile?.DrivingLicenseUri &&
-                        booking.DriverHouseNumberStreet == userProfile?.HouseNumberStreet &&
-                        booking.DriverWard == userProfile?.Ward &&
-                        booking.DriverDistrict == userProfile?.District &&
-                        booking.DriverCityProvince == userProfile?.CityProvince
-                        ? true : false,
+            isRenterSameAsDriver = false,
 
             // Car information
             LicensePlate = car?.LicensePlate,
             Brand = car?.Brand,
             Model = car?.Model,
             Color = car?.Color,
-            ProductionYear = car?.ProductionYear,
-            IsAutomatic = car?.IsAutomatic,
-            IsGasoline = car?.IsGasoline,
-            NumberOfSeats = car?.NumberOfSeats,
-            Mileage = car?.Mileage,
-            FuelConsumption = car?.FuelConsumption,
-            CarAddress = $"{car?.HouseNumberStreet}, {car?.Ward}, {car?.District}, {car?.CityProvince}",
-            Description = car?.Description,
-            AdditionalFunction = car?.AdditionalFunction,
+            ProductionYear = car != null ? (int?)car.ProductionYear : null,
+            IsAutomatic = car?.Transmission.ToLower() == "automatic",
+            IsGasoline = car?.FuelType.ToLower() == "gasoline",
+            NumberOfSeats = car != null ? (int?)car.NumberOfSeats : null,
+            Mileage = car?.MileageKm.HasValue == true ? (double?)car.MileageKm.Value : null,
+            FuelConsumption = null,
+            CarAddress = car?.Address != null ? $"{car.Address.HouseNumberStreet}, {car.Address.Ward}, {car.Address.District}, {car.Address.CityProvince}" : null,
+            Description = null,
+            AdditionalFunction = null,
             TermOfUse = car?.TermOfUse,
-            CarImageFront = car?.CarImageFront,
-            CarImageBack = car?.CarImageBack,
-            CarImageLeft = car?.CarImageLeft,
-            CarImageRight = car?.CarImageRight,
+            CarImageFront = car?.CarImages.Where(i => i.ImageType == "front").Select(i => i.Uri).FirstOrDefault(),
+            CarImageBack = car?.CarImages.Where(i => i.ImageType == "back").Select(i => i.Uri).FirstOrDefault(),
+            CarImageLeft = car?.CarImages.Where(i => i.ImageType == "left").Select(i => i.Uri).FirstOrDefault(),
+            CarImageRight = car?.CarImages.Where(i => i.ImageType == "right").Select(i => i.Uri).FirstOrDefault(),
 
             // Documents
-            InsuranceUri = car?.InsuranceUri,
-            InsuranceUriIsVerified = car?.InsuranceUriIsVerified,
-            RegistrationPaperUri = car?.RegistrationPaperUri,
-            RegistrationPaperUriIsVerified = car?.RegistrationPaperUriIsVerified,
-            CertificateOfInspectionUri = car?.CertificateOfInspectionUri,
-            CertificateOfInspectionUriIsVerified = car?.CertificateOfInspectionUriIsVerified,
+            InsuranceUri = car?.CarDocuments.Where(d => d.DocType == "insurance").Select(d => d.Uri).FirstOrDefault(),
+            InsuranceUriIsVerified = car?.CarDocuments.Where(d => d.DocType == "insurance").Select(d => d.Verified).FirstOrDefault(),
+            RegistrationPaperUri = car?.CarDocuments.Where(d => d.DocType == "registration").Select(d => d.Uri).FirstOrDefault(),
+            RegistrationPaperUriIsVerified = car?.CarDocuments.Where(d => d.DocType == "registration").Select(d => d.Verified).FirstOrDefault(),
+            CertificateOfInspectionUri = car?.CarDocuments.Where(d => d.DocType == "inspection").Select(d => d.Uri).FirstOrDefault(),
+            CertificateOfInspectionUriIsVerified = car?.CarDocuments.Where(d => d.DocType == "inspection").Select(d => d.Verified).FirstOrDefault(),
 
             // Payment information
-            BasePrice = booking.BasePrice,
-            Deposit = booking.Deposit,
-            PaymentType = booking.PaymentType,
+            BasePrice = (long?)booking.BasePriceSnapshotCents,
+            Deposit = (long?)booking.DepositSnapshotCents,
+            PaymentType = booking.PaymentMethod,
         };
     }
 
-    internal static Booking ToBookingEntity(BookingCreateDTO bookingCreateDto, Guid userId, BookingStatusEnum status, decimal basedPrice, string bookingNumber)
+    internal static NewBooking ToBookingEntity(BookingCreateDTO bookingCreateDto, Guid userId, BookingStatusEnum status, decimal basedPrice, string bookingNumber)
     {
-        return new Booking
+        return new NewBooking
         {
             BookingNumber = bookingNumber,
             CarId = bookingCreateDto.CarId,
-            AccountId = userId,
+            RenterAccountId = userId,
             PickUpTime = bookingCreateDto.PickupDate,
             DropOffTime = bookingCreateDto.DropoffDate,
-            PickUpLocation = $"{bookingCreateDto.PickupLocation.Province}/{bookingCreateDto.PickupLocation.District}/{bookingCreateDto.PickupLocation.Ward}",
-            DropOffLocation = $"{bookingCreateDto.PickupLocation.Province}/{bookingCreateDto.PickupLocation.District}/{bookingCreateDto.PickupLocation.Ward}",
-            BasePrice = (long?)basedPrice,
-            Deposit = (long?)bookingCreateDto.Deposit,
-            PaymentType = bookingCreateDto.PaymentType,
+            PickUpAddressId = null,
+            DropOffAddressId = null,
+            BasePriceSnapshotCents = basedPrice,
+            DepositSnapshotCents = bookingCreateDto.Deposit,
+            PaymentMethod = bookingCreateDto.PaymentType,
             Status = status.ToString(),
             CreatedAt = DateTime.UtcNow,
-            DriverFullName = bookingCreateDto.DriverFullName,
-            DriverEmail = bookingCreateDto.DriverEmail,
-            DriverDob = bookingCreateDto.DriverDob == null ? null : DateOnly.FromDateTime((DateTime)bookingCreateDto.DriverDob),
-            DriverPhoneNumber = bookingCreateDto.DriverPhoneNumber,
-            DriverNationalId = bookingCreateDto.DriverNationalId,
-            DriverHouseNumberStreet = bookingCreateDto.DriverHouseNumberStreet,
-            DriverWard = bookingCreateDto.DriverLocation?.Ward,
-            DriverDistrict = bookingCreateDto.DriverLocation?.District,
-            DriverCityProvince = bookingCreateDto.DriverLocation?.Province
         };
     }
 
-    internal static BookingInformationVO? ToBookingInformationVO(Booking newBooking)
+    internal static BookingInformationVO? ToBookingInformationVO(NewBooking newBooking)
     {
         throw new NotImplementedException();
     }

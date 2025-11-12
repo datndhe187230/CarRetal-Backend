@@ -80,12 +80,12 @@ namespace CarRental_BE.Services.Impl
             return recentBookings.Select(b => new RecentBookingVO
             {
                 BookingNumber = b.BookingNumber,
-                CustomerName = b.DriverFullName ?? "Unknown",
-                CustomerEmail = b.DriverEmail ?? "Unknown",
+                CustomerName = b.BookingDrivers.FirstOrDefault() != null ? b.BookingDrivers.First().FullName : "Unknown",
+                CustomerEmail = b.RenterAccount?.Email ?? "Unknown",
                 CarName = $"{b.Car?.Brand} {b.Car?.Model}",
                 Status = b.Status ?? "Unknown",
-                Amount = (decimal)(b.BasePrice ?? 0),
-                CreatedAt = b.CreatedAt ?? DateTime.MinValue
+                Amount = (decimal)(b.BasePriceSnapshotCents ??0),
+                CreatedAt = b.CreatedAt
             });
         }
 

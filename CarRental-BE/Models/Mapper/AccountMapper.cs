@@ -1,4 +1,4 @@
-﻿using CarRental_BE.Models.Entities;
+﻿using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Models.VO.AdminManagement;
 
 namespace CarRental_BE.Models.Mapper
@@ -9,9 +9,9 @@ namespace CarRental_BE.Models.Mapper
         {
             return new AccountVO
             {
-                Id = account.Id,
+                Id = account.AccountId,
                 Email = account.Email,
-                Password = account.Password,
+                Password = account.PasswordHash,
                 IsActive = account.IsActive,
                 IsEmailVerified = account.IsEmailVerified,
                 CreatedAt = account.CreatedAt,

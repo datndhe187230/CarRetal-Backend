@@ -3,7 +3,6 @@ using CarRental_BE.Models.VO.Statistic;
 using CarRental_BE.Repositories;
 using CarRental_BE.Models.Enum;
 using CarRental_BE.Models.Common;
-using Microsoft.EntityFrameworkCore;
 using CarRental_BE.Models.DTO;
 
 namespace CarRental_BE.Services.Impl
@@ -114,22 +113,22 @@ namespace CarRental_BE.Services.Impl
                 BookingId = b.BookingNumber,
                 CarId = b.CarId,
                 CarName = $"{b.Car.Brand} {b.Car.Model} {b.Car.ProductionYear}",
-                CarImageFront = b.Car.CarImageFront,
+                CarImageFront = b.Car.CarImages.Where(i => i.ImageType == "front").Select(i => i.Uri).FirstOrDefault(),
                 Status = b.Status ?? string.Empty,
                 PickupDate = b.PickUpTime,
                 ReturnDate = b.DropOffTime,
-                PickUpLocation = b.PickUpLocation,
-                DropOffLocation = b.DropOffLocation,
-                BasePrice = b.BasePrice,
-                Deposit = b.Deposit,
-                TotalAmount = (b.BasePrice ?? 0),
-                PaymentType = b.PaymentType,
-                PaymentStatus = b.Transactions.Any() ? b.Transactions.All(t => t.Status == "Successful") ? "paid" : "partial" : null,
+                PickUpLocation = b.PickUpAddress != null ? b.PickUpAddress.CityProvince : null,
+                DropOffLocation = b.DropOffAddress != null ? b.DropOffAddress.CityProvince : null,
+                BasePrice = (long?)(b.BasePriceSnapshotCents ?? 0),
+                Deposit = (long?)(b.DepositSnapshotCents ?? 0),
+                TotalAmount = (long?)((b.BasePriceSnapshotCents ?? 0) + (b.DepositSnapshotCents ?? 0)),
+                PaymentType = b.PaymentMethod,
+                PaymentStatus = b.Transactions.Any() ? (b.Transactions.All(t => t.Status == "Successful") ? "paid" : "partial") : null,
                 CreatedAt = b.CreatedAt,
                 UpdatedAt = b.UpdatedAt,
-                RenterFullName = b.DriverFullName,
-                RenterEmail = b.DriverEmail,
-                RenterPhoneNumber = b.DriverPhoneNumber
+                RenterFullName = b.BookingDrivers.FirstOrDefault() != null ? b.BookingDrivers.First().FullName : null,
+                RenterEmail = b.RenterAccount.Email,
+                RenterPhoneNumber = b.BookingDrivers.FirstOrDefault() != null ? b.BookingDrivers.First().PhoneNumber : null
             }).ToList();
 
             return new PaginationResponse<CarOwnerBookingListItemVO>(vo, query.Page, query.PageSize, total);
@@ -174,18 +173,18 @@ namespace CarRental_BE.Services.Impl
                 };
             }
 
-            long totalRevenue = completedBookings.Sum(b => b.BasePrice ?? 0);
-            long completedCountThisMonth = completedBookings.Count(b => b.CreatedAt.HasValue && b.CreatedAt.Value.Month == DateTime.UtcNow.Month && b.CreatedAt.Value.Year == DateTime.UtcNow.Year);
+            long totalRevenue = (long)completedBookings.Sum(b => b.BasePriceSnapshotCents ?? 0);
+            long completedCountThisMonth = completedBookings.Count(b => b.CreatedAt.Year == DateTime.UtcNow.Year && b.CreatedAt.Month == DateTime.UtcNow.Month);
             long avgBookingValue = totalCompletedCount > 0 ? totalRevenue / totalCompletedCount : 0;
-            long pendingPayouts = completedBookings.SelectMany(b => b.Transactions).Where(t => t.Type == "ReceiveDeposit" && t.Status != "Successful").Sum(t => t.Amount);
+            long pendingPayouts = (long)completedBookings.SelectMany(b => b.Transactions).Where(t => t.Type == "receive_deposit" && t.Status != "Successful").Sum(t => t.AmountCents);
 
-            var monthly = completedBookings.Where(b => b.CreatedAt.HasValue)
-            .GroupBy(b => new { b.CreatedAt!.Value.Year, b.CreatedAt!.Value.Month })
+            var monthly = completedBookings
+            .GroupBy(b => new { b.CreatedAt.Year, b.CreatedAt.Month })
             .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
             .Select(g => new CarOwnerMonthlyRevenuePoint
             {
                 Month = $"{g.Key.Year:D4}-{g.Key.Month:D2}",
-                Total = (long)g.Sum(b => b.BasePrice ?? 0)
+                Total = (long)g.Sum(b => b.BasePriceSnapshotCents ?? 0)
             }).ToList();
 
             return new CarOwnerEarningsVO
@@ -204,7 +203,6 @@ namespace CarRental_BE.Services.Impl
 
         public async Task<CarOwnerFleetVO> GetFleetAsync(Guid ownerAccountId)
         {
-            // Only pull statuses relevant to fleet utilization
             var query = new CarOwnerBookingListDTO
             {
                 Page = 1,
@@ -238,8 +236,8 @@ namespace CarRental_BE.Services.Impl
             int inactiveFleet = fleetSize - activeFleet;
 
             int totalBookings = total;
-            double avgDurationDays = bookings.Where(b => b.PickUpTime.HasValue && b.DropOffTime.HasValue)
-            .Select(b => (b.DropOffTime!.Value - b.PickUpTime!.Value).TotalDays)
+            double avgDurationDays = bookings
+            .Select(b => (b.DropOffTime - b.PickUpTime).TotalDays)
             .DefaultIfEmpty(0)
             .Average();
             int upcoming = bookings.Count(b => b.Status == BookingStatusEnum.confirmed.ToString() || b.Status == BookingStatusEnum.pending_deposit.ToString() || b.Status == BookingStatusEnum.in_progress.ToString());

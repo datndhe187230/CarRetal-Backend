@@ -1,105 +1,57 @@
-﻿using CarRental_BE.Data;
-using CarRental_BE.Models.Common;
+﻿using CarRental_BE.Models.Common; // ensure ApiResponse
 using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
 using CarRental_BE.Models.VO.Car;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Authorization;
-using CloudinaryDotNet;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using CarEntity = CarRental_BE.Models.NewEntities.Car;
+using CarRental_BE.Models.NewEntities;
+using CarRental_BE.Data;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
 public class CarController : ControllerBase
 {
-    private readonly CarRentalContext _context;
     private readonly ICarService _carService;
 
-    //Dependency Injection
-    public CarController(CarRentalContext context, ICarService carService)
+    public CarController( ICarService carService)
     {
-
-        _context = context;
         _carService = carService;
     }
 
+    //[HttpGet]
+    //[Route("All")]
+    //public async Task<ActionResult<ApiResponse<List<CarEntity>>>> GetAllCar()
+    //{
+    //    try
+    //    {
+    //        var anyCar = _carService.Car;
+    //        var response = new ApiResponse<List<CarEntity>>(200, "Connection successful", anyCar);
+    //        return Ok(response);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        var error = new ApiResponse<string>(500, "Connection failed", $"Connection failed: {ex.Message}");
+    //        return StatusCode(500, error);
+    //    }
+    //}
 
-    //Dat
-    [HttpGet]
-    [Route("All")]
-    public async Task<ActionResult<ApiResponse<List<Car>>>> GetAllCar()
-    {
-        try
-        {
-            // Fix: Replace AllAsync with ToListAsync to fetch all cars
-            List<Car> anyCar = await _context.Cars.ToListAsync();
-            var response = new ApiResponse<List<Car>>(
-                status: 200,
-                message: "Connection successful",
-                data: anyCar
-            );
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            var errorResponse = new ApiResponse<string>(
-                status: 500,
-                message: "Connection failed",
-                data: $"Connection failed: {ex.Message}"
-            );
-            return StatusCode(500, errorResponse);
-        }
-    }
 
-    [HttpGet("test-connection")]
-    
-    public async Task<IActionResult> TestConnection()
-    {
-        try
-        {
-            var anyCar = await _context.Cars.FirstOrDefaultAsync();
-            return Ok(anyCar != null ? "Connected and data exists." : "Connected but no data.");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Connection failed: {ex.Message}");
-        }
-    }
-
-    //Hung
     [HttpGet("{accountId}/paginated")]
     [Authorize(Roles = "car_owner")]
-    public async Task<ApiResponse<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId,
-        [FromQuery] int PageNumber = 1,
-        [FromQuery] int PageSize = 10)
+    public async Task<ApiResponse<PaginationResponse<CarVO_ViewACar>>> GetCarsByAccountId(Guid accountId, [FromQuery] int PageNumber =1, [FromQuery] int PageSize =10)
     {
         try
         {
-            var request = new PaginationRequest
-            {
-                PageNumber = PageNumber,
-                PageSize = PageSize
-            };
-
+            var request = new PaginationRequest { PageNumber = PageNumber, PageSize = PageSize };
             var result = await _carService.GetCarsByAccountId(accountId, request);
-
-            var response = new ApiResponse<PaginationResponse<CarVO_ViewACar>>(
-                status: 200,
-                message: "Connection successful",
-                data: result
-                );
-            return response;
+            return new ApiResponse<PaginationResponse<CarVO_ViewACar>>(200, "Connection successful", result);
         }
-        catch (Exception ex)
+        catch
         {
-            return new ApiResponse<PaginationResponse<CarVO_ViewACar>>(
-                status: 500,
-                message: "Connection failed",
-                data: null
-           );
-
+            return new ApiResponse<PaginationResponse<CarVO_ViewACar>>(500, "Connection failed", null);
         }
     }
 
@@ -110,13 +62,8 @@ public class CarController : ControllerBase
         try
         {
             var updatedCar = await _carService.UpdateCarEntity(carId, updateDto);
-            if (updatedCar == null)
-            {
-                return new ApiResponse<CarVO_Full>(404, "Car not found", null);
-            }
-
+            if (updatedCar == null) return new ApiResponse<CarVO_Full>(404, "Car not found", null);
             var result = await _carService.GetCarVOById(carId);
-
             return new ApiResponse<CarVO_Full>(200, "Update Success", result);
         }
         catch (Exception ex)
@@ -132,61 +79,29 @@ public class CarController : ControllerBase
         try
         {
             var carDetail = await _carService.GetCarDetailById(carId);
-
-            if (carDetail == null)
-            {
-                return new ApiResponse<CarVO_CarDetail>(
-                    status: 404,
-                    message: "Car not found",
-                    data: null);
-            }
-
-            return new ApiResponse<CarVO_CarDetail>(
-                status: 200,
-                message: "Car details retrieved successfully",
-                data: carDetail);
+            if (carDetail == null) return new ApiResponse<CarVO_CarDetail>(404, "Car not found", null);
+            return new ApiResponse<CarVO_CarDetail>(200, "Car details retrieved successfully", carDetail);
         }
         catch (Exception ex)
         {
-            return new ApiResponse<CarVO_CarDetail>(
-                status: 500,
-                message: $"Error retrieving car details: {ex.Message}",
-                data: null);
+            return new ApiResponse<CarVO_CarDetail>(500, $"Error retrieving car details: {ex.Message}", null);
         }
     }
 
     [AllowAnonymous]
     [HttpGet("search")]
-    public async Task<ApiResponse<PaginationResponse<CarSearchVO>>> SearchCar([FromQuery] SearchDTO searchDTO, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<ApiResponse<PaginationResponse<CarSearchVO>>> SearchCar([FromQuery] SearchDTO searchDTO, [FromQuery] int page =1, [FromQuery] int pageSize =10)
     {
-        var requestPage = new PaginationRequest
-        {
-            PageNumber = page,
-            PageSize = pageSize
-        };
-
-        PaginationResponse<CarSearchVO> list = await _carService.SearchCar(searchDTO, requestPage);
-
-        var response = new ApiResponse<PaginationResponse<CarSearchVO>>(
-            status: 200,
-            message: "Successful",
-            data: list
-        );
-
-        return response;
+        var requestPage = new PaginationRequest { PageNumber = page, PageSize = pageSize };
+        var list = await _carService.SearchCar(searchDTO, requestPage);
+        return new ApiResponse<PaginationResponse<CarSearchVO>>(200, "Successful", list);
     }
 
     [HttpPost("add")]
     [Authorize(Roles = "admin, car_owner")]
     public async Task<ApiResponse<CarVO_CarDetail>> AddCar([FromForm] AddCarDTO addCarDTO)
     {
-            var newCar = await _carService.AddCar(addCarDTO);
-            
-            return new ApiResponse<CarVO_CarDetail>(
-                status: 201,
-                message: "Car added successfully",
-                data: newCar);
-        
+        var newCar = await _carService.AddCar(addCarDTO);
+        return new ApiResponse<CarVO_CarDetail>(201, "Car added successfully", newCar);
     }
-
 }

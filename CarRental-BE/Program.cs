@@ -3,7 +3,7 @@ using CarRental_BE.Data;
 using CarRental_BE.Helpers;
 using CarRental_BE.Middleware;
 using CarRental_BE.Models.Common;
-using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Models.Mapper;
 using CarRental_BE.Repositories;
 using CarRental_BE.Repositories.Impl;
@@ -27,21 +27,11 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Console.WriteLine(">>> builder ENV: " + builder.Environment.EnvironmentName);
-
-// Add services to the container.
 builder.Services.AddControllers();
 
-// Load User Secrets (automatically included in Development)
-//builder.Configuration.AddUserSecrets<Program>();
+builder.Services.Configure<ApiBehaviorOptions>(options => { options.SuppressModelStateInvalidFilter = true; });
 
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
- options.SuppressModelStateInvalidFilter = true;
-});
-
-
-//Add Repository and Services
+// Add Repository and Services
 builder.Services.AddScoped<IAccountRepository, AccountRepositoryImpl>();
 builder.Services.AddScoped<IUserRepository, UserRepositoryImpl>();
 builder.Services.AddScoped<IUserService, UserServiceImpl>();
@@ -90,21 +80,17 @@ builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudN
 builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
 
 // Configure email settings
-builder.Services.Configure<EmailSettings>(
- builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
-// Register DbContext using connection string from user secrets
+// Register DbContext using connection string from configuration (NewEntities)
 builder.Services.AddDbContext<CarRentalContext>(options =>
  options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
+
 builder.Services.AddCors(options =>
 {
- options.AddDefaultPolicy(
- policy => policy.WithOrigins("http://localhost:3000")
- .AllowAnyHeader()
- .AllowAnyMethod()
- .AllowCredentials());
+ options.AddDefaultPolicy(policy => policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod().AllowCredentials());
 });
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 
@@ -113,6 +99,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
  var configuration = builder.Configuration.GetConnectionString("Redis");
  return ConnectionMultiplexer.Connect(configuration);
 });
+
 //Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
@@ -133,10 +120,8 @@ builder.Services.AddAuthentication(options =>
  ValidIssuer = builder.Configuration["Jwt:Issuer"],
  ValidAudience = builder.Configuration["Jwt:Audience"],
  IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
-
  RoleClaimType = ClaimTypes.Role
  };
-
 
  options.Events = new JwtBearerEvents
  {
@@ -145,13 +130,10 @@ builder.Services.AddAuthentication(options =>
  var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
  var accessToken = context.Request.Cookies["Access_Token"];
  var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
-
- // Route-based token selection
  if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
  {
  if (!string.IsNullOrEmpty(forgotPasswordToken))
  {
- Console.WriteLine(forgotPasswordToken);
  context.Token = forgotPasswordToken;
  }
  }
@@ -162,28 +144,19 @@ builder.Services.AddAuthentication(options =>
  context.Token = accessToken;
  }
  }
-
  return Task.CompletedTask;
  },
-
  OnChallenge = context =>
  {
  context.HandleResponse();
-
  context.Response.StatusCode =401;
  context.Response.ContentType = "application/json";
-
- var result = JsonSerializer.Serialize(new
- {
- code =401,
- message = "Unauthorized. Token is missing, invalid, or expired."
- });
-
+ var result = JsonSerializer.Serialize(new { code =401, message = "Unauthorized. Token is missing, invalid, or expired." });
  return context.Response.WriteAsync(result);
  }
  };
  });
-//Add VnPay
+
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 //Register AutoMapper 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
@@ -197,37 +170,23 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-//booking
-
 
 app.Use(async (context, next) =>
 {
  await next();
-
  if (context.Response.StatusCode ==403)
  {
  context.Response.ContentType = "application/json";
- var result = JsonSerializer.Serialize(new
- {
- code =403,
- message = "Forbidden: You do not have permission to access this resource."
- });
+ var result = JsonSerializer.Serialize(new { code =403, message = "Forbidden: You do not have permission to access this resource." });
  await context.Response.WriteAsync(result);
  }
 });
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
  app.MapOpenApi();
 }
 
-//booking
-
-
-
 app.UseHttpsRedirection();
-
 app.MapControllers();
-
 app.Run();

@@ -1,5 +1,5 @@
 ﻿using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.NewEntities; // switched from old Entities
 
 namespace CarRental_BE.Repositories
 {

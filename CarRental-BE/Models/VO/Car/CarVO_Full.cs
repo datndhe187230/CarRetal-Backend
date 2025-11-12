@@ -1,4 +1,4 @@
-﻿using CarRental_BE.Models.Entities;
+﻿using CarRental_BE.Models.NewEntities;
 
 namespace CarRental_BE.Models.VO.Car
 {
@@ -72,8 +72,8 @@ namespace CarRental_BE.Models.VO.Car
 
         public DateTime? UpdatedAt { get; set; }
 
-        public virtual Account Account { get; set; } = null!;
+        //public virtual Account Account { get; set; } = null!;
 
-        public virtual ICollection<Entities.Booking> Bookings { get; set; } = new List<Entities.Booking>();
+        //public virtual ICollection<Entities.Booking> Bookings { get; set; } = new List<Entities.Booking>();
     }
 }

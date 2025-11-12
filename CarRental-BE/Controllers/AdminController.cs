@@ -1,5 +1,5 @@
 ﻿using CarRental_BE.Data;
-using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Models.VO.AdminManagement;
 using CarRental_BE.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -43,7 +43,7 @@ public class AdminController : ControllerBase
                 return NotFound(new ApiResponse<object>(404, "User not found."));
             }
 
-            var responseData = new { Id = updatedAccount.Id, IsActive = updatedAccount.IsActive };
+            var responseData = new { Id = updatedAccount.AccountId, IsActive = updatedAccount.IsActive };
             return Ok(new ApiResponse<object>(200, "User status updated successfully.", responseData));
         }
         catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿using CarRental_BE.Models.Entities;
+﻿using CarRental_BE.Models.NewEntities;
 
 namespace CarRental_BE.Models.VO.Car
 {

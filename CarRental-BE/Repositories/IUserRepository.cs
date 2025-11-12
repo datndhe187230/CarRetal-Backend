@@ -1,5 +1,5 @@
 ﻿using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.NewEntities;
 
 namespace CarRental_BE.Repositories
 {
@@ -10,9 +10,10 @@ namespace CarRental_BE.Repositories
 
         Task<bool> ChangePassword(Guid id, ChangePasswordDTO dto);
 
-        Task ResetPassword(ChangePasswordDTO dto);
+        Task<bool> Register(RegisterDTO dto);
 
         Task<string?> GetUserProfileFullNameByAccountId(Guid accountId);
-        Task<bool> Register(RegisterDTO dto);
+
+        Task ResetPassword(ChangePasswordDTO dto);
     }
 }

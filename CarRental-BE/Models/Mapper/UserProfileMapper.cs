@@ -1,5 +1,5 @@
-﻿using CarRental_BE.Models.Entities;
-using CarRental_BE.Models.VO.User;
+﻿using CarRental_BE.Models.NewEntities;
+using CarRental_BE.Models.VO.User;  
 
 namespace CarRental_BE.Models.Mapper
 {
@@ -9,17 +9,17 @@ namespace CarRental_BE.Models.Mapper
         {
             return new UserProfileVO
             {
-                Id = entity.Id,
+                Id = entity.AccountId,
                 FullName = entity.FullName,
                 Dob = entity.Dob,
                 PhoneNumber = entity.PhoneNumber,
                 NationalId = entity.NationalId,
                 DrivingLicenseUri = entity.DrivingLicenseUri,
-                HouseNumberStreet = entity.HouseNumberStreet,
-                Ward = entity.Ward,
-                District = entity.District,
-                CityProvince = entity.CityProvince,
-                Email = entity.IdNavigation?.Email
+                HouseNumberStreet = entity.Address.HouseNumberStreet,
+                Ward = entity.Address.Ward,
+                District = entity.Address.District,
+                CityProvince = entity.Address.CityProvince,
+                Email = entity.Account.Email
             };
         }
     }

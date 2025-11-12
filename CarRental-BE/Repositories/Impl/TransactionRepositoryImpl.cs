@@ -1,6 +1,6 @@
-﻿using CarRental_BE.Data;
-using CarRental_BE.Models.VO.Statistic;
+﻿using CarRental_BE.Models.VO.Statistic;
 using Microsoft.EntityFrameworkCore;
+using CarRental_BE.Data;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -17,7 +17,7 @@ namespace CarRental_BE.Repositories.Impl
         {
             return await _context.Transactions
                 .Where(t => t.Status == "Completed")
-                .SumAsync(t => (decimal)t.Amount);
+                .SumAsync(t => t.AmountCents);
         }
 
         public async Task<IEnumerable<TopPayingCustomerVO>> GetTopPayingCustomersAsync(int count = 5)
@@ -26,13 +26,13 @@ namespace CarRental_BE.Repositories.Impl
                 .Where(t => t.Status == "Completed")
                 .Select(t => new
                 {
-                    t.Amount,
+                    t.AmountCents,
                     WalletId = t.WalletId,
-                    AccountId = t.Wallet.IdNavigation.Id,
-                    Email = t.Wallet.IdNavigation.Email,
-                    FullName = t.Wallet.IdNavigation.UserProfile.FullName,
-                    Phone = t.Wallet.IdNavigation.UserProfile.PhoneNumber,
-                    JoinYear = t.Wallet.IdNavigation.CreatedAt.Year,
+                    AccountId = t.Wallet.AccountId,
+                    Email = t.Wallet.Account.Email,
+                    FullName = t.Wallet.Account.UserProfile.FullName,
+                    Phone = t.Wallet.Account.UserProfile.PhoneNumber,
+                    JoinYear = t.Wallet.Account.CreatedAt.Year,
                     Bookings = t.BookingNumber,
                     CarName = t.BookingNumberNavigation.Car != null
                         ? t.BookingNumberNavigation.Car.Brand + " " + t.BookingNumberNavigation.Car.Model
@@ -61,11 +61,9 @@ namespace CarRental_BE.Repositories.Impl
                         CustomerName = g.Key.FullName ?? "Unknown",
                         Phone = g.Key.Phone ?? "Unknown",
                         MemberSince = g.Key.JoinYear.ToString(),
-                        TotalPayments = g.Sum(x => (decimal)x.Amount),
+                        TotalPayments = g.Sum(x => x.AmountCents),
                         TotalBookings = g.Select(x => x.Bookings).Distinct().Count(),
-                        LastBooking = lastBooking.HasValue
-                            ? (DateTime.Now - lastBooking.Value).Days + " days ago"
-                            : "Unknown",
+                        LastBooking = lastBooking != default(DateTime) ? (DateTime.Now - lastBooking).Days + " days ago" : "Unknown",
                         PreferredVehicle = g.FirstOrDefault()?.CarName ?? "Unknown"
                     };
                 })
@@ -84,7 +82,7 @@ namespace CarRental_BE.Repositories.Impl
                 {
                     Type = g.Key ?? "Unknown",
                     Count = g.Count(),
-                    TotalAmount = g.Sum(t => (decimal)t.Amount)
+                    TotalAmount = g.Sum(t => t.AmountCents)
                 })
                 .ToListAsync();
         }
@@ -93,11 +91,11 @@ namespace CarRental_BE.Repositories.Impl
         {
             return await _context.Transactions
                 .Where(t => t.CreatedAt >= startDate && t.CreatedAt <= endDate)
-                .GroupBy(t => t.CreatedAt.Value.Date)
+                .GroupBy(t => t.CreatedAt.Date)
                 .Select(g => new DailyTransactionVO
                 {
                     Date = g.Key,
-                    TotalAmount = g.Sum(t => (decimal)t.Amount),
+                    TotalAmount = g.Sum(t => t.AmountCents),
                     TransactionCount = g.Count()
                 })
                 .OrderBy(x => x.Date)

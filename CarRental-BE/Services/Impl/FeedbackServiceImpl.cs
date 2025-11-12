@@ -2,7 +2,7 @@
 using CarRental_BE.Data;
 using CarRental_BE.Models.Common;
 using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Repositories;
 using System;
 using System.Threading.Tasks;
@@ -25,20 +25,30 @@ namespace CarRental_BE.Services
             if (booking == null)
                 return new ApiResponse<FeedbackResponseDTO>(400, "Booking not found", null);
 
-            //if (booking.AccountId.ToString() != userId)
-                //return new ApiResponse<FeedbackResponseDTO>(401, "Unauthorized", null);
-
+            // Validate user if provided
+            if (Guid.TryParse(userId, out var fromAccountId))
+            {
+                if (booking.RenterAccountId != fromAccountId)
+                {
+                    // Optional: enforce ownership
+                    // return new ApiResponse<FeedbackResponseDTO>(401, "Unauthorized", null);
+                }
+            }
 
             if (request.Rating.HasValue && (request.Rating < 1 || request.Rating > 5))
                 return new ApiResponse<FeedbackResponseDTO>(400, "Rating must be between 1 and 5", null);
 
-            var feedback = new Feedback
+            var toAccountId = booking.Car.OwnerAccountId;
+
+            var feedback = new Review
             {
+                ReviewId = Guid.NewGuid(),
                 BookingNumber = request.BookingNumber,
-                Rating = request.Rating,
+                FromAccountId = Guid.TryParse(userId, out var parsed) ? parsed : booking.RenterAccountId,
+                ToAccountId = toAccountId,
+                Rating = (byte)(request.Rating ?? 0),
                 Comment = request.Comment,
-                CreateAt = DateTime.UtcNow, 
-                UpdateAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow
             };
 
             await _feedbackRepository.AddFeedbackAsync(feedback);

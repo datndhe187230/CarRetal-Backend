@@ -45,15 +45,15 @@ namespace CarRental_BE.Services.Impl
             }
             //else if (!BCrypt.Net.BCrypt.Verify(loginDto.Password, userAccount.Password))
             // else if (!String.Equals(loginDto.Password, userAccount.Password, StringComparison.Ordinal))
-            else if (!PasswordHelper.VerifyPassword(loginDto.Password, userAccount.Password))
+            else if (!PasswordHelper.VerifyPassword(loginDto.Password, userAccount.PasswordHash))
             {
                 throw new UnauthorizedException("Invalid password.");
             }
 
-            var fullName = await _userRepository.GetUserProfileFullNameByAccountId(userAccount.Id);
+            var fullName = await _userRepository.GetUserProfileFullNameByAccountId(userAccount.AccountId);
 
             var roleAccount = userAccount.Role;
-            var idAccount = userAccount.Id;
+            var idAccount = userAccount.AccountId;
             var issuer = _config["Jwt:Issuer"];
             var audience = _config["Jwt:Audience"];
             var key = _config["Jwt:SecretKey"];

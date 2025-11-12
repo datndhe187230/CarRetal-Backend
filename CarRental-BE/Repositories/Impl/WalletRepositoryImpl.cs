@@ -1,9 +1,7 @@
-﻿using CarRental_BE.Data;
-using CarRental_BE.Data;
-using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
-using CarRental_BE.Repositories;
+﻿using CarRental_BE.Models.DTO;
 using Microsoft.EntityFrameworkCore;
+using CarRental_BE.Models.NewEntities;
+using CarRental_BE.Data;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -19,31 +17,32 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<Wallet?> GetWalletByAccountId(Guid accountId)
         {
             return await _context.Wallets
-                .Include(w => w.IdNavigation)
-                .FirstOrDefaultAsync(w => w.Id == accountId);
+                .Include(w => w.Account)
+                .FirstOrDefaultAsync(w => w.AccountId == accountId);
         }
-
 
         public async Task<Wallet> CreateWallet(Guid accountId)
         {
             // Check if account exists
-            var accountExists = await _context.Accounts.AnyAsync(a => a.Id == accountId);
+            var accountExists = await _context.Accounts.AnyAsync(a => a.AccountId == accountId);
             if (!accountExists)
             {
                 throw new InvalidOperationException($"Account with ID {accountId} does not exist");
             }
 
             // Check if wallet already exists
-            var existingWallet = await GetWalletByAccountId(accountId);
-            if (existingWallet != null)
+            var existing = await GetWalletByAccountId(accountId);
+            if (existing != null)
             {
-                return existingWallet;
+                return existing;
             }
 
             var wallet = new Wallet
             {
-                Id = accountId,
-                Balance = 0
+                AccountId = accountId,
+                BalanceCents = 0m,
+                LockedCents = 0m,
+                UpdatedAt = DateTime.UtcNow
             };
 
             _context.Wallets.Add(wallet);
@@ -65,12 +64,11 @@ namespace CarRental_BE.Repositories.Impl
             // Apply search filter
             if (!string.IsNullOrEmpty(filter.SearchTerm))
             {
-                var searchTerm = filter.SearchTerm.ToLower();
+                var s = filter.SearchTerm.ToLower();
                 query = query.Where(t =>
-                    (t.Type != null && t.Type.ToLower().Contains(searchTerm)) ||
-                    (t.CarName != null && t.CarName.ToLower().Contains(searchTerm)) ||
-                    (t.BookingNumber != null && t.BookingNumber.Contains(searchTerm)) ||
-                    (t.Message != null && t.Message.ToLower().Contains(searchTerm)));
+                    (t.Type != null && t.Type.ToLower().Contains(s)) ||
+                    (t.Description != null && t.Description.ToLower().Contains(s)) ||
+                    (t.BookingNumber != null && t.BookingNumber.ToLower().Contains(s)));
             }
 
             // Apply date filters
@@ -81,8 +79,8 @@ namespace CarRental_BE.Repositories.Impl
 
             if (filter.ToDate.HasValue)
             {
-                var toDate = filter.ToDate.Value.Date.AddDays(1); // Include the entire day
-                query = query.Where(t => t.CreatedAt < toDate);
+                var to = filter.ToDate.Value.Date.AddDays(1); // Include the entire day
+                query = query.Where(t => t.CreatedAt < to);
             }
 
             // Apply type filter
@@ -100,14 +98,14 @@ namespace CarRental_BE.Repositories.Impl
             // Order by creation date (newest first)
             query = query.OrderByDescending(t => t.CreatedAt);
 
-            var totalCount = await query.CountAsync();
+            var total = await query.CountAsync();
 
-            var transactions = await query
+            var items = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            return (transactions, totalCount);
+            return (items, total);
         }
 
         public async Task<Transaction?> GetTransactionDetail(Guid transactionId, Guid accountId)
@@ -115,65 +113,42 @@ namespace CarRental_BE.Repositories.Impl
             return await _context.Transactions
                 .Include(t => t.Wallet)
                 .Include(t => t.BookingNumberNavigation)
-                .FirstOrDefaultAsync(t => t.Id == transactionId && t.Wallet.Id == accountId);
+                .FirstOrDefaultAsync(t => t.TransactionId == transactionId && t.Wallet.AccountId == accountId);
         }
 
         public async Task<Transaction> CreateTransaction(Transaction transaction)
         {
-            try
-            {
-                _context.Transactions.Add(transaction);
-                await _context.SaveChangesAsync();
-                return transaction;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to create transaction: {ex.Message}", ex);
-            }
+            _context.Transactions.Add(transaction);
+            await _context.SaveChangesAsync();
+            return transaction;
         }
 
-        public async Task<bool> UpdateWalletBalance(Guid walletId, long newBalance)
+        public async Task<bool> UpdateWalletBalance(Guid walletId, decimal newBalance)
         {
-            try
+            var wallet = await _context.Wallets.FindAsync(walletId);
+            if (wallet == null)
             {
-                var wallet = await _context.Wallets.FindAsync(walletId);
-                if (wallet == null)
-                {
-                    throw new InvalidOperationException($"Wallet with ID {walletId} not found");
-                }
+                throw new InvalidOperationException($"Wallet with ID {walletId} not found");
+            }
 
-                wallet.Balance = newBalance;
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to update wallet balance: {ex.Message}", ex);
-            }
+            wallet.BalanceCents = newBalance;
+            wallet.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<Transaction?> GetTransactionById(Guid transactionId)
         {
             return await _context.Transactions
                 .Include(t => t.Wallet)
-                .FirstOrDefaultAsync(t => t.Id == transactionId);
+                .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
         }
 
         public async Task<Wallet?> GetAdminWallet(object accountId)
         {
-            // Assuming admin is identified by RoleId == 1
-            Guid id;
-            if (accountId is Guid guid)
-                id = guid;
-            else if (accountId is string str && Guid.TryParse(str, out var parsed))
-                id = parsed;
-            else
-                throw new ArgumentException("Invalid accountId type");
-
-            var account = await _context.Accounts
-                .Include(a => a.Wallet)
-                .FirstOrDefaultAsync(a => a.Id == id && a.RoleId == 1);
-
+            Guid id = accountId is Guid g ? g : (accountId is string s && Guid.TryParse(s, out var parsed) ? parsed : Guid.Empty);
+            if (id == Guid.Empty) throw new ArgumentException("Invalid accountId type");
+            var account = await _context.Accounts.Include(a => a.Wallet).FirstOrDefaultAsync(a => a.AccountId == id && a.RoleId == 1);
             return account?.Wallet;
         }
 
@@ -188,9 +163,7 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<bool> UpdateTransactionStatus(Guid transactionId, string status)
         {
             var transaction = await _context.Transactions.FindAsync(transactionId);
-            if (transaction == null)
-                return false;
-
+            if (transaction == null) return false;
             transaction.Status = status;
             await _context.SaveChangesAsync();
             return true;
@@ -198,15 +171,11 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<bool> UpdateTransaction(Transaction transaction)
         {
-            var existing = await _context.Transactions.FindAsync(transaction.Id);
-            if (existing == null)
-                return false;
-
+            var existing = await _context.Transactions.FindAsync(transaction.TransactionId);
+            if (existing == null) return false;
             _context.Entry(existing).CurrentValues.SetValues(transaction);
             await _context.SaveChangesAsync();
             return true;
         }
-
-
     }
 }
