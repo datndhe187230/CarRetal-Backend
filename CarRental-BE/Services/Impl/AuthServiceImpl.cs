@@ -1,13 +1,14 @@
 ﻿using CarRental_BE.Data;
 using CarRental_BE.Exceptions;
+using CarRental_BE.Helpers;
 using CarRental_BE.Models.DTO;
+using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Repositories;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using CarRental_BE.Helpers;
 
 namespace CarRental_BE.Services.Impl
 {
@@ -86,6 +87,82 @@ namespace CarRental_BE.Services.Impl
             return new LoginVO
             {
                 Token = token
+            };
+        }
+
+        public async Task<LoginVO> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal)
+        {
+            string accessToken = string.Empty;
+
+            if (claimsPrincipal == null)
+            {
+                throw new ExternalLoginProviderException("Google", "ClaimsPrincipal is null");
+            }
+            var claims = claimsPrincipal.Identities.FirstOrDefault()?.Claims;
+            var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "unknown";
+
+            if (email == null)
+            {
+                throw new ExternalLoginProviderException("Google", "Email is null");
+            }
+
+            var userAccount = await _accountRepository.getAccountByEmailWithRole(email);
+
+            if (userAccount == null)
+            {
+                var newAccount = new Account
+                {
+                    Email = email,
+                    PasswordHash = PasswordHelper.HashPassword(Guid.NewGuid().ToString()),
+                    IsActive = true,
+                    IsEmailVerified = true,
+                    CreatedAt = DateTime.UtcNow,
+                    RoleId = 2
+                };
+
+                await _accountRepository.CreateAccountAsync(newAccount);
+
+                userAccount = await _accountRepository.getAccountByEmailWithRole(email);
+
+            }
+
+            var fullName = "Google User";
+
+            var roleAccount = userAccount.Role;
+            var idAccount = userAccount.AccountId;
+            var issuer = _config["Jwt:Issuer"];
+            var audience = _config["Jwt:Audience"];
+            var key = _config["Jwt:SecretKey"];
+            var tokenValidityMins = _config.GetValue<int>("Jwt:TokenValidityMins");
+            var tokenExpiryTimeStamp = DateTime.UtcNow.AddMinutes(tokenValidityMins);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                new Claim(JwtRegisteredClaimNames.Email, email),
+                new Claim(ClaimTypes.Role, roleAccount.Name!),
+                new Claim("id", idAccount.ToString()!),
+                new Claim("fullname", fullName ?? string.Empty)
+
+            }),
+                Expires = tokenExpiryTimeStamp,
+                Issuer = issuer,
+                Audience = audience,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
+                    SecurityAlgorithms.HmacSha256Signature
+                )
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var securityToken = tokenHandler.CreateToken(tokenDescriptor);
+            var token = tokenHandler.WriteToken(securityToken);
+            accessToken = token;
+
+            return new LoginVO
+            {
+                Token = accessToken
             };
         }
 
