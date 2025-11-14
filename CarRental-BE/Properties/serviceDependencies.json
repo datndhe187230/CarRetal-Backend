@@ -14,7 +14,7 @@
   },
 
   "ConnectionStrings": {
-    "DatabaseConnection": "Server=car-rental.cl22ku0yy1qy.ap-southeast-2.rds.amazonaws.com;Database=CarRental;User Id=admin;Password=quanquan3007;TrustServerCertificate=True;",
+    "DatabaseConnection": "Server-DESKTOP-D09V394\\SQLEXPRESS01;uid=dat;pwd=123;database=car_rental;TrustServerCertificate=True;",
     "Redis": "localhost:6379;abortConnect=false "
   },
 
@@ -25,5 +25,19 @@
     "Password": "pdqmspuihpebobhu",
     "SenderName": "CarRental",
     "SenderEmail": "kienduccml@gmail.com"
-  }
+  },
+  "GeminiApiKey": "AIzaSyB9nXw4CqFAQz3i_EVVdkCV6z5lftbRZ3I",
+
+
+  "Vnpay": {
+    "TmnCode": "9470Y15L", //NJJ0R8FS //9HZKBNNN
+    "HashSecret": "LE40RS90NLTY196IEIDCFSZPCU6FAS5T", //BYKJBHPPZKQMKBIBGGXIYKWYFAYSJXCW //8HGHV2MT8QI5NLICKG28HOBLJ0AATIE6
+    "BaseUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+    "Command": "pay",
+    "CurrCode": "VND",
+    "Version": "2.1.0",
+    "Locale": "vn",
+    "PaymentBackReturnUrl": "http://localhost:3000/vnpay-callback" // Trỏ thẳng tới frontend
+  },
+  "TimeZoneId": "SE Asia Standard Time" // If do not us Windown OS change it to: Asia/Bangkok
 }

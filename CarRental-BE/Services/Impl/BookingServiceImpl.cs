@@ -139,9 +139,9 @@ public class BookingServiceImpl : IBookingService
         <p>The booking <strong>{booking.BookingNumber}</strong> has been cancelled by the customer.</p>
         <p>Please check your dashboard for more details.</p>";
     }
-    public async Task<BookingDetailVO?> GetBookingByBookingIdAsync(string id)
+    public async Task<BookingDetailVO?> GetBookingByBookingNumberAsync(string id)
     {
-        var entity = await _bookingRepository.GetBookingByBookingIdAsync(id);
+        var entity = await _bookingRepository.GetBookingByBookingNumberAsync(id);
         return entity != null ? BookingMapper.ToBookingDetailVO(entity) : null;
     }
 
@@ -191,7 +191,7 @@ public class BookingServiceImpl : IBookingService
             {
                 booking.Status = "pending_payment";
                 await _bookingRepository.UpdateAsync(booking);
-                return (false, "ME012: Your wallet doesn’t have enough balance. Please top-up your wallet and try again.");
+                return (false, "Your wallet doesn’t have enough balance. Please top-up your wallet and try again.");
             }
 
             // Deduct remaining amount from wallet and create transaction
@@ -409,7 +409,7 @@ public class BookingServiceImpl : IBookingService
         return bookings.Select(b => new OccupiedDateRange
         {
             Start = (DateTime)b.PickUpTime,
-            End = (DateTime)b.DropOffTime,
+            End = (DateTime)(b.ActualReturnTime ?? b.DropOffTime),
         }).ToArray();
     }
 

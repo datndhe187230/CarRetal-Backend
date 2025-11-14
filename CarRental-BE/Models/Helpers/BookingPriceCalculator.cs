@@ -16,8 +16,9 @@ namespace CarRental_BE.Models.Helpers
             var deposit = booking.DepositSnapshotCents ?? plan.DepositCents;
 
             //1. Rental duration in whole days (ceil on hours/24)
-            var duration = booking.DropOffTime - booking.PickUpTime;
-            var totalDays = (int)Math.Ceiling(duration.TotalHours / 24d);
+            var duration = booking.ActualReturnTime - booking.PickUpTime;
+            double totalHours = duration.HasValue ? duration.Value.TotalHours : throw new InvalidOperationException("Booking must have valid ActualReturnTime.");
+            var totalDays = (int)Math.Ceiling(totalHours / 24d);
             if (totalDays < 1) totalDays = 1;
 
             //2. Base price

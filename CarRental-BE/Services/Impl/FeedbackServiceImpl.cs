@@ -13,15 +13,17 @@ namespace CarRental_BE.Services
     public class FeedbackServiceImpl : IFeedbackService
     {
         private readonly IFeedbackRepository _feedbackRepository;
+        private readonly IBookingRepository _bookingRepository;
 
-        public FeedbackServiceImpl(IFeedbackRepository feedbackRepository)
+        public FeedbackServiceImpl(IFeedbackRepository feedbackRepository , IBookingRepository bookingRepository)
         {
             _feedbackRepository = feedbackRepository;
+            _bookingRepository = bookingRepository;
         }
 
         public async Task<ApiResponse<FeedbackResponseDTO>> SubmitFeedbackAsync(string userId, FeedbackRequestDTO request)
         {
-            var booking = await _feedbackRepository.GetBookingAsync(request.BookingNumber);
+            var booking = await _bookingRepository.GetBookingByBookingNumberAsync(request.BookingNumber);
             if (booking == null)
                 return new ApiResponse<FeedbackResponseDTO>(400, "Booking not found", null);
 

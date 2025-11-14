@@ -31,6 +31,7 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<UserProfile?> GetById(Guid id)
         {
             return await _context.UserProfiles
+                .Include(x => x.Address)
                 .Include(x => x.Account)
                 .FirstOrDefaultAsync(x => x.AccountId == id);
         }

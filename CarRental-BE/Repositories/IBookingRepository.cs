@@ -12,7 +12,7 @@ public interface IBookingRepository
     Task<(List<Booking>, int)> GetBookingsWithPagingAsync(int page, int pageSize);
     Task<Booking?> GetByBookingNumberAsync(string bookingNumber);
     Task UpdateAsync(Booking booking);
-    Task<Booking?> GetBookingByBookingIdAsync(string id);
+    Task<Booking?> GetBookingByBookingNumberAsync(string id);
     Task<Booking?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto);
     Task<IEnumerable<Booking>> GetRecentBookingsAsync(int count = 10);
     Task<int> GetTotalBookingsCountAsync();
