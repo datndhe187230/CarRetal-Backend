@@ -5,6 +5,7 @@ using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Repositories;
+using CloudinaryDotNet;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -110,7 +111,7 @@ namespace CarRental_BE.Services.Impl
 
             if (userAccount == null)
             {
-                var newAccount = new Account
+                var newAccount = new Models.NewEntities.Account
                 {
                     AccountId = Guid.NewGuid(),
                     Email = email,
@@ -120,10 +121,24 @@ namespace CarRental_BE.Services.Impl
                     CreatedAt = DateTime.UtcNow,
                     RoleId = 3
                 };
+                var userProfile = new UserProfile
+                {
+                    AccountId = newAccount.AccountId,
+                    FullName = "Google User",
+                    Account = newAccount
+                };
+                var wallet = new Wallet
+                {
+                    AccountId = newAccount.AccountId,
+                    BalanceCents = 0m,
+                    LockedCents = 0m,
+                    Account = newAccount,
+                    UpdatedAt = DateTime.UtcNow
+                };
 
                 await _accountRepository.CreateAccountAsync(newAccount);
 
-                userAccount = await _accountRepository.getAccountByEmailWithRole(email);
+                userAccount = newAccount;
 
             }
 
