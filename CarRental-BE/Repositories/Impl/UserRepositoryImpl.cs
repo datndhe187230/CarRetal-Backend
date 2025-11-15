@@ -40,6 +40,7 @@ namespace CarRental_BE.Repositories.Impl
         {
             var user = await _context.UserProfiles
                 .Include(u => u.Account)
+                .Include(u => u.Address)
                 .FirstOrDefaultAsync(u => u.AccountId == id);
 
             if (user == null) throw new UserNotFoundException();
@@ -62,7 +63,30 @@ namespace CarRental_BE.Repositories.Impl
                 user.DrivingLicenseUri = url;
             }
 
-            await _context.SaveChangesAsync();
+            if (user.Address == null)
+            {
+                user.Address = new Address
+                {
+                    AddressId = Guid.NewGuid(), 
+                    CreatedAt = DateTime.UtcNow
+                };
+            }
+
+            user.Address.HouseNumberStreet = dto.HouseNumberStreet ?? string.Empty;
+            user.Address.Ward = dto.Ward;
+            user.Address.District = dto.District;
+            user.Address.CityProvince = dto.CityProvince;
+            user.Address.UpdatedAt = DateTime.UtcNow;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+
+                 throw new InvalidOperationException(ex.InnerException?.Message ?? ex.Message);
+            }
             return user;
         }
 
