@@ -134,6 +134,9 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<Car?> GetByIdWithBookings(Guid carId)
         {
             return await _context.Cars
+                .Include(c => c.CarPricingPlans)
+                .Include(c => c.Address)
+                .Include(c => c.CarImages)
                 .Include(c => c.Bookings)
                 .ThenInclude(b => b.Reviews)
                 .FirstOrDefaultAsync(c => c.CarId == carId);
@@ -141,7 +144,10 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<Car?> GetByIdAsync(Guid id)
         {
-            return await _context.Cars.FirstOrDefaultAsync(c => c.CarId == id);
+            return await _context.Cars
+                .Include(c => c.CarCalendars)
+                .Include(c => c.CarPricingPlans)
+                .FirstOrDefaultAsync(c => c.CarId == id);
         }
 
         private string BuildTermOfUse(AddCarDTO dto)
@@ -186,7 +192,9 @@ namespace CarRental_BE.Repositories.Impl
                 var pickup = searchDTO.PickupTime.Value;
                 var drop = searchDTO.DropoffTime.Value;
                 query = query.Where(c => !_context.Bookings.Any(b => b.CarId == c.CarId && b.Status != "completed" && b.Status != "cancelled"
- && ((pickup >= b.PickUpTime && pickup <= b.DropOffTime) || (drop >= b.PickUpTime && drop <= b.DropOffTime) || (b.PickUpTime >= pickup && b.PickUpTime <= drop))));
+                    && ((pickup >= b.PickUpTime && pickup <= (b.ActualReturnTime ?? b.DropOffTime))
+                    || (drop >= b.PickUpTime && drop <= (b.ActualReturnTime ?? b.DropOffTime))
+                    || (b.PickUpTime >= pickup && b.PickUpTime <= drop))));
             }
 
             // active pricing plan
@@ -233,8 +241,8 @@ namespace CarRental_BE.Repositories.Impl
                 {
                     case "price":
                         query = asc
- ? query.OrderBy(c => c.CarPricingPlans.Where(p => p.IsActive == true).Select(p => p.BasePricePerDayCents).FirstOrDefault())
- : query.OrderByDescending(c => c.CarPricingPlans.Where(p => p.IsActive == true).Select(p => p.BasePricePerDayCents).FirstOrDefault());
+                            ? query.OrderBy(c => c.CarPricingPlans.Where(p => p.IsActive == true).Select(p => p.BasePricePerDayCents).FirstOrDefault())
+                            : query.OrderByDescending(c => c.CarPricingPlans.Where(p => p.IsActive == true).Select(p => p.BasePricePerDayCents).FirstOrDefault());
                         break;
                     case "newest":
                         query = asc
@@ -252,7 +260,12 @@ namespace CarRental_BE.Repositories.Impl
             }
 
             var total = await query.CountAsync();
-            var cars = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            var cars = await query
+                .Include(c => c.CarPricingPlans)
+                .Include(c => c.Address)
+                .Include(c => c.CarImages)
+                .Include(c => c.Features)
+                .Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
             return (cars, total);
         }
 
@@ -351,7 +364,7 @@ namespace CarRental_BE.Repositories.Impl
 
         public Task<bool> CheckCarBookingStatus(Guid carId, DateTime pickupDate, DateTime dropoffDate)
         {
-            var hasConflict = _context.Bookings.Any(b => b.CarId == carId && b.Status != "completed" && b.Status != "cancelled" && ((pickupDate >= b.PickUpTime && pickupDate <= b.DropOffTime) || (dropoffDate >= b.PickUpTime && dropoffDate <= b.DropOffTime) || (b.PickUpTime >= pickupDate && b.PickUpTime <= dropoffDate)));
+            var hasConflict = _context.Bookings.Any(b => b.CarId == carId && b.Status != "completed" && b.Status != "cancelled" && ((pickupDate >= b.PickUpTime && pickupDate <= (b.ActualReturnTime ?? b.DropOffTime)) || (dropoffDate >= b.PickUpTime && dropoffDate <= (b.ActualReturnTime ?? b.DropOffTime)) || (b.PickUpTime >= pickupDate && b.PickUpTime <= dropoffDate)));
             return Task.FromResult(!hasConflict);
         }
 

@@ -49,4 +49,10 @@
         public UnauthorizedException(string message)
             : base(message, 1005, 401) { }
     }
+
+    public class ExternalLoginProviderException : AppException
+    {
+        public ExternalLoginProviderException(string provider, string message)
+            : base($"{provider}: {message}", 1006, 400) { }
+    }
 }

@@ -4,8 +4,8 @@ using CarRental_BE.Models.DTO;
 using CarRental_BE.Repositories;
 using CarRental_BE.Services;
 using InvalidOperationException = CarRental_BE.Exceptions.InvalidOperationException;
-using CarEntity = CarRental_BE.Models.NewEntities.Car;
 using CarRental_BE.Models.VO.Car;
+using CarRental_BE.Models.NewEntities;
 
 public class CarServiceImpl : ICarService
 {
@@ -68,7 +68,7 @@ public class CarServiceImpl : ICarService
         return detail;
     }
 
-    public async Task<CarRental_BE.Models.NewEntities.Car?> UpdateCarEntity(Guid carId, CarUpdateDTO updatedCar)
+    public async Task<Car?> UpdateCarEntity(Guid carId, CarUpdateDTO updatedCar)
     {
         var car = await _carRepository.GetCarById(carId);
         if (car == null) return null;

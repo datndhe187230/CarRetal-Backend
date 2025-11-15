@@ -10,6 +10,8 @@ public class BookingDetailVO
     public string Status { get; set; }
     public DateTime? PickUpTime { get; set; }
     public DateTime? DropOffTime { get; set; }
+
+    public DateTime? ActualReturnTime { get; set; }
     public string? AccountEmail { get; set; }
 
     public string? DropOffLocation { get; set; }

@@ -11,7 +11,7 @@ namespace CarRental_BE.Controllers
 {
     [ApiController]
     [Route("api/car-owner")]
-    [Authorize(Roles = "car_owner")]
+    [Authorize(Roles = "car_owner,admin")]
     public class CarOwnerController : ControllerBase
     {
         private readonly ICarOwnerDashboardService _service;
@@ -96,7 +96,7 @@ namespace CarRental_BE.Controllers
                 var result = await _service.GetOwnerBookingsAsync(principalId, query);
                 if (!result.Data.Any())
                 {
-                    return NotFound(new ApiResponse<string>(404, "No bookings found"));
+                    return NoContent();
                 }
                 return Ok(new ApiResponse<PaginationResponse<CarOwnerBookingListItemVO>>(200, "Success", result));
             }

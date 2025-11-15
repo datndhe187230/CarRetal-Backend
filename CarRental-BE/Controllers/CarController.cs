@@ -5,6 +5,7 @@ using CarRental_BE.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 using CarEntity = CarRental_BE.Models.NewEntities.Car;
 using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Data;
@@ -15,29 +16,113 @@ using CarRental_BE.Data;
 public class CarController : ControllerBase
 {
     private readonly ICarService _carService;
+    private readonly DbContext _dbContext;
 
-    public CarController( ICarService carService)
+    public CarController(ICarService carService, CarRentalContext dbContext)
     {
         _carService = carService;
+        _dbContext = dbContext;
     }
 
-    //[HttpGet]
-    //[Route("All")]
-    //public async Task<ActionResult<ApiResponse<List<CarEntity>>>> GetAllCar()
-    //{
-    //    try
-    //    {
-    //        var anyCar = _carService.Car;
-    //        var response = new ApiResponse<List<CarEntity>>(200, "Connection successful", anyCar);
-    //        return Ok(response);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        var error = new ApiResponse<string>(500, "Connection failed", $"Connection failed: {ex.Message}");
-    //        return StatusCode(500, error);
-    //    }
-    //}
+    // PSEUDOCODE:
+    // - Create DTOs to shape schema response: TableSchemaDto and ColumnSchemaDto
+    // - Open a DB connection from EF Core DbContext (Database.GetDbConnection)
+    // - Query INFORMATION_SCHEMA.TABLES to get all base tables (schema + table name)
+    // - For each table, query INFORMATION_SCHEMA.COLUMNS to get column details
+    // - Map to DTOs and return in ApiResponse
+    // - On error, return 500 with message
+    [HttpGet]
+    [Route("testconnection")]
+    public async Task<ActionResult<ApiResponse<List<TableSchemaDto>>>> GetAllCar()
+    {
+        try
+        {
+            var conn = _dbContext.Database.GetDbConnection();
+            var shouldClose = false;
 
+            if (conn.State != System.Data.ConnectionState.Open)
+            {
+                await conn.OpenAsync();
+                shouldClose = true;
+            }
+
+            var tables = new List<(string Schema, string Name)>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT TABLE_SCHEMA, TABLE_NAME
+                    FROM INFORMATION_SCHEMA.TABLES
+                    WHERE TABLE_TYPE = 'BASE TABLE'
+                    ORDER BY TABLE_SCHEMA, TABLE_NAME;";
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var schema = reader.GetString(0);
+                    var table = reader.GetString(1);
+                    tables.Add((schema, table));
+                }
+            }
+
+            var result = new List<TableSchemaDto>(tables.Count);
+
+            foreach (var (schema, table) in tables)
+            {
+                var columns = new List<ColumnSchemaDto>();
+                using var colCmd = conn.CreateCommand();
+                colCmd.CommandText = @"
+                    SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, CHARACTER_MAXIMUM_LENGTH
+                    FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table
+                    ORDER BY ORDINAL_POSITION;";
+                var pSchema = colCmd.CreateParameter();
+                pSchema.ParameterName = "@schema";
+                pSchema.Value = schema;
+                colCmd.Parameters.Add(pSchema);
+
+                var pTable = colCmd.CreateParameter();
+                pTable.ParameterName = "@table";
+                pTable.Value = table;
+                colCmd.Parameters.Add(pTable);
+
+                using var colReader = await colCmd.ExecuteReaderAsync();
+                while (await colReader.ReadAsync())
+                {
+                    var name = colReader.GetString(0);
+                    var dataType = colReader.GetString(1);
+                    var isNullable = string.Equals(colReader.GetString(2), "YES", StringComparison.OrdinalIgnoreCase);
+                    int? maxLen = colReader.IsDBNull(3) ? null : colReader.GetInt32(3);
+
+                    columns.Add(new ColumnSchemaDto
+                    {
+                        Name = name,
+                        DataType = dataType,
+                        IsNullable = isNullable,
+                        MaxLength = maxLen
+                    });
+                }
+
+                result.Add(new TableSchemaDto
+                {
+                    Schema = schema,
+                    Table = table,
+                    Columns = columns
+                });
+            }
+
+            if (shouldClose)
+            {
+                await conn.CloseAsync();
+            }
+
+            var response = new ApiResponse<List<TableSchemaDto>>(200, "Connection successful", result);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            var error = new ApiResponse<List<TableSchemaDto>>(500, $"Connection failed: {ex.Message}", null);
+            return StatusCode(500, error);
+        }
+    }
 
     [HttpGet("{accountId}/paginated")]
     [Authorize(Roles = "car_owner")]
@@ -104,4 +189,19 @@ public class CarController : ControllerBase
         var newCar = await _carService.AddCar(addCarDTO);
         return new ApiResponse<CarVO_CarDetail>(201, "Car added successfully", newCar);
     }
+}
+
+public class TableSchemaDto
+{
+    public string Schema { get; set; } = default!;
+    public string Table { get; set; } = default!;
+    public List<ColumnSchemaDto> Columns { get; set; } = new();
+}
+
+public class ColumnSchemaDto
+{
+    public string Name { get; set; } = default!;
+    public string DataType { get; set; } = default!;
+    public bool IsNullable { get; set; }
+    public int? MaxLength { get; set; }
 }

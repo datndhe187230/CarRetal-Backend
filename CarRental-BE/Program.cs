@@ -51,7 +51,6 @@ builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
 builder.Services.AddScoped<IFeedbackService, FeedbackServiceImpl>();
 builder.Services.AddScoped<IChatbotService, ChatbotServiceImpl>();
 builder.Services.AddScoped<IFeedbackReportService, FeedbackReportServiceImpl>();
-// Car owner dashboard service
 builder.Services.AddScoped<ICarOwnerDashboardService, CarOwnerDashboardServiceImpl>();
 
 //Configure Elasticsearch settings (local)
@@ -71,7 +70,7 @@ var apiSecret = builder.Configuration.GetValue<string>("CloudinarySettings:ApiSe
 
 if (new[] { cloudName, apiKey, apiSecret }.Any(string.IsNullOrWhiteSpace))
 {
- throw new ArgumentException("Please specify Cloudinary account details!");
+    throw new ArgumentException("Please specify Cloudinary account details!");
 }
 
 builder.Services.AddSingleton(new Cloudinary(new CloudinaryDotNet.Account(cloudName, apiKey, apiSecret)));
@@ -83,12 +82,13 @@ builder.Services.AddSingleton<VNPAY.NET.IVnpay, VNPAY.NET.Vnpay>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 // Register DbContext using connection string from configuration (NewEntities)
+string connectionString = builder.Configuration["ConnectionStrings:DatabaseConnection"];
 builder.Services.AddDbContext<CarRentalContext>(options =>
- options.UseSqlServer(builder.Configuration["ConnectionStrings:DatabaseConnection"]));
+ options.UseSqlServer(connectionString));
 
 builder.Services.AddCors(options =>
 {
- options.AddDefaultPolicy(policy => policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+    options.AddDefaultPolicy(policy => policy.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod().AllowCredentials());
 });
 
 builder.Services.AddOpenApi();
@@ -96,70 +96,83 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
- var configuration = builder.Configuration.GetConnectionString("Redis");
- return ConnectionMultiplexer.Connect(configuration);
+    var configuration = builder.Configuration.GetConnectionString("Redis");
+    return ConnectionMultiplexer.Connect(configuration);
 });
 
 //Configure Authentication With JWT Bearer
 builder.Services.AddAuthentication(options =>
 {
- options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
- options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
- options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 })
  .AddJwtBearer(options =>
  {
- options.RequireHttpsMetadata = false;
- options.SaveToken = true;
- options.TokenValidationParameters = new TokenValidationParameters
- {
- ValidateIssuer = true,
- ValidateAudience = true,
- ValidateLifetime = true,
- ValidateIssuerSigningKey = true,
- ValidIssuer = builder.Configuration["Jwt:Issuer"],
- ValidAudience = builder.Configuration["Jwt:Audience"],
- IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
- RoleClaimType = ClaimTypes.Role
- };
+     options.RequireHttpsMetadata = false;
+     options.SaveToken = true;
+     options.TokenValidationParameters = new TokenValidationParameters
+     {
+         ValidateIssuer = true,
+         ValidateAudience = true,
+         ValidateLifetime = true,
+         ValidateIssuerSigningKey = true,
+         ValidIssuer = builder.Configuration["Jwt:Issuer"],
+         ValidAudience = builder.Configuration["Jwt:Audience"],
+         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!)),
+         RoleClaimType = ClaimTypes.Role
+     };
 
- options.Events = new JwtBearerEvents
- {
- OnMessageReceived = context =>
- {
- var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
- var accessToken = context.Request.Cookies["Access_Token"];
- var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
- if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
- {
- if (!string.IsNullOrEmpty(forgotPasswordToken))
- {
- context.Token = forgotPasswordToken;
- }
- }
- else
- {
- if (!string.IsNullOrEmpty(accessToken))
- {
- context.Token = accessToken;
- }
- }
- return Task.CompletedTask;
- },
- OnChallenge = context =>
- {
- context.HandleResponse();
- context.Response.StatusCode =401;
- context.Response.ContentType = "application/json";
- var result = JsonSerializer.Serialize(new { code =401, message = "Unauthorized. Token is missing, invalid, or expired." });
- return context.Response.WriteAsync(result);
- }
- };
- });
+     options.Events = new JwtBearerEvents
+     {
+         OnMessageReceived = context =>
+         {
+             var requestPath = context.HttpContext.Request.Path.Value?.ToLower();
+             var accessToken = context.Request.Cookies["Access_Token"];
+             var forgotPasswordToken = context.Request.Cookies["Forgot_Password_Token"];
+             if (!string.IsNullOrEmpty(requestPath) && requestPath.Contains("/reset-password"))
+             {
+                 if (!string.IsNullOrEmpty(forgotPasswordToken))
+                 {
+                     context.Token = forgotPasswordToken;
+                 }
+             }
+             else
+             {
+                 if (!string.IsNullOrEmpty(accessToken))
+                 {
+                     context.Token = accessToken;
+                 }
+             }
+             return Task.CompletedTask;
+         },
+         OnChallenge = context =>
+         {
+             context.HandleResponse();
+             context.Response.StatusCode = 401;
+             context.Response.ContentType = "application/json";
+             var result = JsonSerializer.Serialize(new { code = 401, message = "Unauthorized. Token is missing, invalid, or expired." });
+             return context.Response.WriteAsync(result);
+         }
+     };
+ })
+.AddCookie("GoogleCookieScheme")
+// Google login scheme, explicitly tied to cookie sign-in
+.AddGoogle("Google", options =>
+{
+    options.ClientId = builder.Configuration["Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+    options.SignInScheme = "GoogleCookieScheme"; // this is crucial
+});
+
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.MinimumSameSitePolicy = SameSiteMode.None;
+});
 
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 //Register AutoMapper 
-builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+builder.Services.AddAutoMapper(typeof(CarMapper));
 
 builder.Services.AddAuthorization();
 
@@ -173,18 +186,18 @@ app.UseAuthorization();
 
 app.Use(async (context, next) =>
 {
- await next();
- if (context.Response.StatusCode ==403)
- {
- context.Response.ContentType = "application/json";
- var result = JsonSerializer.Serialize(new { code =403, message = "Forbidden: You do not have permission to access this resource." });
- await context.Response.WriteAsync(result);
- }
+    await next();
+    if (context.Response.StatusCode == 403)
+    {
+        context.Response.ContentType = "application/json";
+        var result = JsonSerializer.Serialize(new { code = 403, message = "Forbidden: You do not have permission to access this resource." });
+        await context.Response.WriteAsync(result);
+    }
 });
 
 if (app.Environment.IsDevelopment())
 {
- app.MapOpenApi();
+    app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();

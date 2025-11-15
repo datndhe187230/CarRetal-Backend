@@ -30,7 +30,11 @@ namespace CarRental_BE.Repositories.Impl
         }
 
         public async Task<Booking?> GetByBookingNumberAsync(string bookingNumber)
-            => await _context.Bookings.Include(b => b.Car).Include(b => b.RenterAccount).ThenInclude(a => a.Wallet).FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
+            => await _context.Bookings
+            .Include(b => b.Car)
+            .ThenInclude(c=>c.CarPricingPlans)
+            .Include(b => b.RenterAccount).ThenInclude(a => a.Wallet)
+            .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
 
         public async Task<(List<Booking>, int)> GetBookingsWithPagingAsync(int page, int pageSize)
         {
@@ -42,13 +46,20 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task UpdateAsync(Booking booking)
         {
+            booking.ActualReturnTime = DateTime.UtcNow;
             _context.Bookings.Update(booking);
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Booking?> GetBookingByBookingIdAsync(string id)
+        public async Task<Booking?> GetBookingByBookingNumberAsync(string id)
         {
-            return await _context.Bookings.Include(b => b.Car).Include(b => b.RenterAccount).ThenInclude(a => a.UserProfile).FirstOrDefaultAsync(b => b.BookingNumber == id);
+            return await _context.Bookings
+                .Include(b=>b.DropOffAddress)
+                .Include(b=>b.PickUpAddress)
+                .Include(b=>b.BookingDrivers)
+                .Include(b => b.Car).ThenInclude(c=>c.Address)
+                .Include(b => b.RenterAccount).ThenInclude(a => a.UserProfile)
+                .FirstOrDefaultAsync(b => b.BookingNumber == id);
         }
 
         public async Task<Booking?> UpdateBookingAsync(string bookingNumber, BookingEditDTO bookingDto)
@@ -202,7 +213,16 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<(List<Booking> Items, int TotalCount)> GetOwnerBookingsFilteredAsync(Guid ownerAccountId, CarOwnerBookingListDTO query)
         {
-            var q = _context.Bookings.Include(b => b.Car).Include(b => b.Transactions).Where(b => b.Car.OwnerAccountId == ownerAccountId).AsQueryable();
+            var q = _context.Bookings
+                .Include(b=>b.DropOffAddress)
+                .Include(b=>b.PickUpAddress)
+                .Include(b => b.Car)
+                .ThenInclude(c=>c.Address)
+                .Include(b => b.Transactions)
+                .Include(b => b.RenterAccount)
+                .Include(b=>b.BookingDrivers)
+                .Where(b => b.Car.OwnerAccountId == ownerAccountId)
+                .AsQueryable();
             if (!string.IsNullOrWhiteSpace(query.Search))
             {
                 var term = query.Search.Trim().ToLower();
@@ -222,14 +242,14 @@ namespace CarRental_BE.Repositories.Impl
             {
                 var from = query.FromDate?.Date ?? DateTime.MinValue.Date;
                 var to = (query.ToDate?.Date ?? DateTime.MaxValue.Date).AddDays(1).AddTicks(-1);
-                q = q.Where(b => b.PickUpTime <= to && b.DropOffTime >= from);
+                q = q.Where(b => b.PickUpTime <= to && (b.ActualReturnTime ?? b.DropOffTime) >= from);
             }
             var sortBy = (query.SortBy ?? string.Empty).ToLower();
             var sortDir = (query.SortDirection ?? "desc").ToLower();
             bool asc = sortDir == "asc";
             IOrderedQueryable<Booking>? ordered = null;
             if (sortBy == "pickupdate") ordered = asc ? q.OrderBy(b => b.PickUpTime) : q.OrderByDescending(b => b.PickUpTime);
-            else if (sortBy == "returndate") ordered = asc ? q.OrderBy(b => b.DropOffTime) : q.OrderByDescending(b => b.DropOffTime);
+            else if (sortBy == "returndate") ordered = asc ? q.OrderBy(b => (b.ActualReturnTime ?? b.DropOffTime)) : q.OrderByDescending(b => (b.ActualReturnTime ?? b.DropOffTime));
             else if (sortBy == "totalamount") ordered = asc ? q.OrderBy(b => (b.BasePriceSnapshotCents ??0) + (b.DepositSnapshotCents ??0)) : q.OrderByDescending(b => (b.BasePriceSnapshotCents ??0) + (b.DepositSnapshotCents ??0));
             else if (sortBy == "status") ordered = asc ? q.OrderBy(b => b.Status) : q.OrderByDescending(b => b.Status);
             else ordered = q.OrderBy(b => b.Status == BookingStatusEnum.confirmed.ToString() ?0 : b.Status == BookingStatusEnum.in_progress.ToString() ?1 : b.Status == BookingStatusEnum.pending_payment.ToString() ?2 : b.Status == BookingStatusEnum.pending_deposit.ToString() ?3 :4).ThenByDescending(b => b.PickUpTime);

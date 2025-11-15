@@ -73,5 +73,10 @@ namespace CarRental_BE.Models.VO.Car
         public int Rating {  get; set; }
 
         public int TotalRating { get; set; }
+
+        // New: Pricing integration
+        public List<CarVO_PricePlan> PricePlans { get; set; } = new();
+
+        public CarVO_PricePlan? ActivePricePlan { get; set; }
     }
 }

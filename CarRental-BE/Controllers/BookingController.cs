@@ -91,7 +91,7 @@ namespace CarRental_BE.Controllers
         [HttpGet("detail/{bookingNumber}")]
         public async Task<ActionResult<ApiResponse<BookingDetailVO>>> GetBookingById(string bookingNumber)
         {
-            var data = await _bookingService.GetBookingByBookingIdAsync(bookingNumber);
+            var data = await _bookingService.GetBookingByBookingNumberAsync(bookingNumber);
             if (data == null)
                 return NotFound(new ApiResponse<BookingVO>(404, "Booking detail not found", null));
 
@@ -116,6 +116,7 @@ namespace CarRental_BE.Controllers
             var carDetails = await _carService.GetCarDetailById(carId);
             var userDetails = await _userService.GetUserProfile(userId);
             var occupiedDates = await _bookingService.GetOccupiedDatesByCarId(carId);
+
             if (occupiedDates == null)
             {
                 occupiedDates = new OccupiedDateRange[0]; // Return empty array if no bookings
