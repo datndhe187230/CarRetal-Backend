@@ -121,13 +121,13 @@ namespace CarRental_BE.Services.Impl
                     CreatedAt = DateTime.UtcNow,
                     RoleId = 3
                 };
-                var userProfile = new UserProfile
+                var newUserProfile = new UserProfile
                 {
                     AccountId = newAccount.AccountId,
                     FullName = "Google User",
                     Account = newAccount
                 };
-                var wallet = new Wallet
+                var newWallet = new Wallet
                 {
                     AccountId = newAccount.AccountId,
                     BalanceCents = 0m,
@@ -136,7 +136,7 @@ namespace CarRental_BE.Services.Impl
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                await _accountRepository.CreateAccountAsync(newAccount);
+                await _accountRepository.CreateAccountAsync(newAccount, newUserProfile, newWallet);
 
                 userAccount = newAccount;
 
