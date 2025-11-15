@@ -11,6 +11,7 @@ using CarImage = CarRental_BE.Models.NewEntities.CarImage;
 using CarDocument = CarRental_BE.Models.NewEntities.CarDocument;
 using Address = CarRental_BE.Models.NewEntities.Address;
 using Booking = CarRental_BE.Models.NewEntities.Booking;
+using CarRental_BE.Models.NewEntities;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -64,10 +65,23 @@ namespace CarRental_BE.Repositories.Impl
             };
 
             var uploadedPublicIds = new List<string>();
+
+            var basePriceCents = decimal.TryParse(dto.BasePrice, out var bp) ? bp : 0m;
+            var depositCents = decimal.TryParse(dto.RequiredDeposit, out var dp) ? dp : 0m;
+
+            var pricingPlan = new CarPricingPlan
+            {
+                PlanId = Guid.NewGuid(),
+                CarId = car.CarId,
+                BasePricePerDayCents = basePriceCents,
+                DepositCents = depositCents,
+                IsActive = true,
+            };
             try
             {
                 _context.Addresses.Add(address);
                 _context.Cars.Add(car);
+                _context.CarPricingPlans.Add(pricingPlan);
 
                 // images
                 await AddImageAsync(dto.FrontImage, car.CarId, "front", uploadedPublicIds);

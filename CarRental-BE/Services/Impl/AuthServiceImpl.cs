@@ -112,12 +112,13 @@ namespace CarRental_BE.Services.Impl
             {
                 var newAccount = new Account
                 {
+                    AccountId = Guid.NewGuid(),
                     Email = email,
                     PasswordHash = PasswordHelper.HashPassword(Guid.NewGuid().ToString()),
                     IsActive = true,
                     IsEmailVerified = true,
                     CreatedAt = DateTime.UtcNow,
-                    RoleId = 2
+                    RoleId = 3
                 };
 
                 await _accountRepository.CreateAccountAsync(newAccount);
