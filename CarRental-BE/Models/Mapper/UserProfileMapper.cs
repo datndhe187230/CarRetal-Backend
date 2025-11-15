@@ -1,5 +1,5 @@
 ﻿using CarRental_BE.Models.NewEntities;
-using CarRental_BE.Models.VO.User;  
+using CarRental_BE.Models.VO.User;
 
 namespace CarRental_BE.Models.Mapper
 {
@@ -15,11 +15,16 @@ namespace CarRental_BE.Models.Mapper
                 PhoneNumber = entity.PhoneNumber,
                 NationalId = entity.NationalId,
                 DrivingLicenseUri = entity.DrivingLicenseUri,
-                HouseNumberStreet = entity.Address.HouseNumberStreet,
-                Ward = entity.Address.Ward,
-                District = entity.Address.District,
-                CityProvince = entity.Address.CityProvince,
-                Email = entity.Account.Email
+
+                // Sử dụng toán tử ?. để truy cập an toàn
+                HouseNumberStreet = entity.Address?.HouseNumberStreet,
+                Ward = entity.Address?.Ward,
+                District = entity.Address?.District,
+                CityProvince = entity.Address?.CityProvince,
+
+                // Ghi chú: Bạn cũng nên làm điều tương tự cho Account để đảm bảo an toàn,
+                // mặc dù truy vấn GetById của bạn đã Include(x => x.Account).
+                Email = entity.Account?.Email
             };
         }
     }
