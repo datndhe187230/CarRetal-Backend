@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO;
+using System.Security.Claims;
 
 namespace CarRental_BE.Services
 {
@@ -10,5 +11,8 @@ namespace CarRental_BE.Services
         Task SendEmailResetPasswordAsync(ForgotPasswordDTO forgotPasswordDto);
 
         Task ResetPasswordAsync(ChangePasswordDTO changePasswordDto);
+
+        Task<LoginVO> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal);
+
     }
 }
