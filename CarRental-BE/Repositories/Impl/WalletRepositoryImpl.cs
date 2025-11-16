@@ -177,5 +177,13 @@ namespace CarRental_BE.Repositories.Impl
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public Task<string?> GetAdminWalletId()
+        {
+            return _context.Accounts
+                .Where(a => a.RoleId == 1)
+                .Select(a => a.AccountId.ToString())
+                .FirstOrDefaultAsync();
+        }
     }
 }

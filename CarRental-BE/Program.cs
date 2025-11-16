@@ -24,6 +24,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using CarRental_BE.Services.Background.Email;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -175,6 +176,8 @@ builder.Services.AddScoped<IVnPayService, VnPayService>();
 builder.Services.AddAutoMapper(typeof(CarMapper));
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IEmailJobQueue, EmailJobQueue>();
+builder.Services.AddHostedService<StatusChangeEmailBackgroundService>();
 
 var app = builder.Build();
 

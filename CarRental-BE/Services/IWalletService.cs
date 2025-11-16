@@ -1,6 +1,7 @@
 ﻿using CarRental_BE.Models.Common;
 using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO.Wallet;
+using CarRental_BE.Models.Enum;
 
 namespace CarRental_BE.Services
 {
@@ -18,5 +19,6 @@ namespace CarRental_BE.Services
         Task<WalletVO_Transaction> TopupMoneyAdmin(TransactionDTO topupDTO);
         Task<bool> RevertBookingTransactionsAsync(string bookingNumber);
         Task<bool> UpdateTransactionStatusAsync(Guid transactionId, string status);
+        Task<bool> RevertBookingTransactionsByTypeAsync(string bookingNumber, TransactionType type);
     }
 }

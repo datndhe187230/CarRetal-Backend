@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Booking = CarRental_BE.Models.NewEntities.Booking;
 using Car = CarRental_BE.Models.NewEntities.Car;
+using CarRental_BE.Models.NewEntities;
 
 namespace CarRental_BE.Repositories.Impl
 {
@@ -34,6 +35,7 @@ namespace CarRental_BE.Repositories.Impl
             .Include(b => b.Car)
             .ThenInclude(c=>c.CarPricingPlans)
             .Include(b => b.RenterAccount).ThenInclude(a => a.Wallet)
+            .Include(b => b.Transactions)
             .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
 
         public async Task<(List<Booking>, int)> GetBookingsWithPagingAsync(int page, int pageSize)
@@ -59,6 +61,8 @@ namespace CarRental_BE.Repositories.Impl
                 .Include(b=>b.BookingDrivers)
                 .Include(b => b.Car).ThenInclude(c=>c.Address)
                 .Include(b => b.RenterAccount).ThenInclude(a => a.UserProfile)
+                .Include(b => b.BookingStatusHistories)
+                .Include(b => b.Transactions)
                 .FirstOrDefaultAsync(b => b.BookingNumber == id);
         }
 
@@ -161,6 +165,10 @@ namespace CarRental_BE.Repositories.Impl
         {
             var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
             if (booking == null) return false;
+            if (newStatus == BookingStatusEnum.waiting_confirm_return.ToString())
+            {
+                booking.ActualReturnTime = DateTime.UtcNow;
+            }
             booking.Status = newStatus;
             booking.UpdatedAt = DateTime.UtcNow;
             _context.Bookings.Update(booking);
@@ -258,6 +266,32 @@ namespace CarRental_BE.Repositories.Impl
             int pageSize = query.PageSize <1 ?10 : query.PageSize >100 ?100 : query.PageSize;
             var items = await ordered.Skip((page -1) * pageSize).Take(pageSize).ToListAsync();
             return (items, totalCount);
+        }
+
+        public async Task AddStatusHistoryAsync(BookingStatusHistory history)
+        {
+            await _context.BookingStatusHistories.AddAsync(history);
+            await _context.SaveChangesAsync();
+        }
+
+        // New: create address
+        public async Task<Address> CreateAddressAsync(Address address)
+        {
+            if (address.AddressId == Guid.Empty)
+            {
+                address.AddressId = Guid.NewGuid();
+            }
+            await _context.Addresses.AddAsync(address);
+            await _context.SaveChangesAsync();
+            return address;
+        }
+
+        // New: create booking driver
+        public async Task<BookingDriver> CreateBookingDriverAsync(BookingDriver driver)
+        {
+            await _context.BookingDrivers.AddAsync(driver);
+            await _context.SaveChangesAsync();
+            return driver;
         }
     }
 }

@@ -37,6 +37,16 @@ namespace CarRental_BE.Models.Enum
         /// <summary>
         /// Waiting for confirmation (mapped to waiting_confirmed)
         /// </summary>
-        waiting_confirmed
+        waiting_confirmed,
+
+        /// <summary>
+        /// Booking is waiting for owner return confirmation (mapped to waiting_confirm_return)
+        /// </summary>
+        waiting_confirm_return,
+
+        /// <summary>
+        /// Booking is rejected return by owner (mapped to rejected_return)
+        /// </summary>
+        rejected_return
     }
 }

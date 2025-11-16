@@ -1,5 +1,5 @@
-﻿
-using CarRental_BE.Models.VO.Transaction;
+﻿using CarRental_BE.Models.VO.Transaction;
+using CarRental_BE.Models.VO.Booking;
 
 public class BookingDetailVO
 {
@@ -77,6 +77,9 @@ public class BookingDetailVO
     public long? BasePrice { get; set; }
     public long? Deposit { get; set; }
     public string? PaymentType { get; set; }
+
+    // New: status history timeline
+    public List<BookingStatusHistoryVO>? statusHistory { get; set; }
 }
 
 

@@ -16,6 +16,8 @@ public class BookingCreateDTO
     [Required]
     public Location DropoffLocation { get; set; }
     public int RentalDays { get; set; }
+    public bool IsDifferentDriver { get; set; } = false;
+
     [Required]
 
     public string PaymentType { get; set; }

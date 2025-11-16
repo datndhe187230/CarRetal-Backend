@@ -36,4 +36,10 @@ public interface IBookingRepository
     Task<IQueryable<Booking>> GetAllBookingsByCarOwnerAsync(Guid ownerAccountId);
     // New optimized query for owner bookings list with filters and paging
     Task<(List<Booking> Items, int TotalCount)> GetOwnerBookingsFilteredAsync(Guid ownerAccountId, CarOwnerBookingListDTO query);
+    // New: status history support
+    Task AddStatusHistoryAsync(BookingStatusHistory history);
+
+    // New: creation helpers for address and driver
+    Task<Address> CreateAddressAsync(Address address);
+    Task<BookingDriver> CreateBookingDriverAsync(BookingDriver driver);
 }
