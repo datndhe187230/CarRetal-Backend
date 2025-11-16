@@ -74,7 +74,7 @@ namespace CarRental_BE.Models.Mapper
                 .ForMember(dest => dest.ProductionYear, opt => opt.MapFrom(src => (int)src.ProductionYear))
                 .ForMember(dest => dest.Mileage, opt => opt.MapFrom(src => src.MileageKm.HasValue ? (double)src.MileageKm.Value : (double?)null))
                 .ForMember(dest => dest.FuelConsumption, opt => opt.Ignore())
-                .ForMember(dest => dest.IsGasoline, opt => opt.MapFrom(src => src.FuelType.ToLower() == "gasoline"))
+                .ForMember(dest => dest.FuelType, opt => opt.MapFrom(src => src.FuelType.ToLower()))
                 .ForMember(dest => dest.IsAutomatic, opt => opt.MapFrom(src => src.Transmission.ToLower() == "automatic"))
                 .ForMember(dest => dest.TermOfUse, opt => opt.MapFrom(src => src.TermOfUse))
                 .ForMember(dest => dest.AdditionalFunction, opt => opt.Ignore())

@@ -307,36 +307,111 @@ namespace CarRental_BE.Repositories.Impl
             return cars;
         }
 
-        public async Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(int pageNumber, int pageSize, CarFilterDTO? filters = null)
+        public async Task<(List<CarVO_Full> cars, int totalCount)>
+    GetAllUnverifiedCarsAsync(int pageNumber, int pageSize, CarFilterDTO? filters)
         {
-            var query = _context.Cars.Where(c => c.Status == "not_verified");
+            var query = _context.Cars
+                .Where(c => c.Status == "not_verified");
+
+            // ------- FILTERING -------
             if (filters != null)
             {
-                if (!string.IsNullOrEmpty(filters.Brand)) query = query.Where(c => c.Brand.Contains(filters.Brand));
-                if (!string.IsNullOrEmpty(filters.Search))
+                if (!string.IsNullOrWhiteSpace(filters.Brand))
+                    query = query.Where(c => c.Brand.Contains(filters.Brand));
+
+                if (!string.IsNullOrWhiteSpace(filters.Search))
                 {
-                    var search = filters.Search.ToLower();
-                    query = query.Where(c => c.Brand.ToLower().Contains(search) || c.Model.ToLower().Contains(search));
+                    string keyword = filters.Search.ToLower();
+                    query = query.Where(c =>
+                        c.Brand.ToLower().Contains(keyword) ||
+                        c.Model.ToLower().Contains(keyword));
                 }
-                if (!string.IsNullOrEmpty(filters.SortBy))
+
+                // ------- SORTING -------
+                bool asc = filters.SortDirection?.ToLower() == "asc";
+
+                if (!string.IsNullOrWhiteSpace(filters.SortBy))
                 {
-                    bool asc = string.Equals(filters.SortDirection, "asc", StringComparison.OrdinalIgnoreCase);
                     query = filters.SortBy.ToLower() switch
                     {
-                        "brand" => asc ? query.OrderBy(c => c.Brand) : query.OrderByDescending(c => c.Brand),
-                        "model" => asc ? query.OrderBy(c => c.Model) : query.OrderByDescending(c => c.Model),
-                        "price" => asc ? query.OrderBy(c => c.CarPricingPlans.Where(p => p.IsActive == true).Select(p => p.BasePricePerDayCents).FirstOrDefault())
-                                     : query.OrderByDescending(c => c.CarPricingPlans.Where(p => p.IsActive == true).Select(p => p.BasePricePerDayCents).FirstOrDefault()),
+                        "brand" => asc ? query.OrderBy(c => c.Brand)
+                                       : query.OrderByDescending(c => c.Brand),
+
+                        "price" => asc
+                            ? query.OrderBy(c =>
+                                c.CarPricingPlans.Where(p => (bool)p.IsActive)
+                                .Select(p => p.BasePricePerDayCents).FirstOrDefault())
+                            : query.OrderByDescending(c =>
+                                c.CarPricingPlans.Where(p => (bool)p.IsActive)
+                                .Select(p => p.BasePricePerDayCents).FirstOrDefault()),
+
                         _ => query.OrderByDescending(c => c.CreatedAt)
                     };
                 }
-                else query = query.OrderByDescending(c => c.CreatedAt);
+                else
+                {
+                    query = query.OrderByDescending(c => c.CreatedAt);
+                }
             }
-            else query = query.OrderByDescending(c => c.CreatedAt);
+            else
+            {
+                query = query.OrderByDescending(c => c.CreatedAt);
+            }
 
-            var total = await query.CountAsync();
-            var cars = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-            return (cars, total);
+            // ------- COUNT -------
+            int totalCount = await query.CountAsync();
+
+            // ------- PROJECTION (NO MORE NULLS!) -------
+            var cars = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new CarVO_Full
+                {
+                    Id = c.CarId,
+                    Brand = c.Brand,
+                    Model = c.Model,
+                    Color = c.Color,
+                    Deposit = (long)c.CarPricingPlans.FirstOrDefault(cp => cp.CarId == c.CarId).DepositCents,
+                    NumberOfSeats = c.NumberOfSeats,
+                    ProductionYear = c.ProductionYear,
+                    Mileage = (double)c.MileageKm,
+                    IsAutomatic = c.Transmission == "automatic",
+                    FuelType = c.FuelType,
+                    TermOfUse = c.TermOfUse,
+                    LicensePlate = c.LicensePlate,
+                    HouseNumberStreet = c.Address.HouseNumberStreet,
+                    Ward = c.Address.Ward,
+                    District = c.Address.District,
+                    CityProvince = c.Address.CityProvince,
+
+                    CarImageFront = c.CarImages.Where(ci => ci.ImageType == "front").FirstOrDefault(ci => ci.CarId == c.CarId).Uri,
+                    CarImageBack = c.CarImages.Where(ci => ci.ImageType == "back").FirstOrDefault(ci => ci.CarId == c.CarId).Uri,
+                    CarImageLeft = c.CarImages.Where(ci => ci.ImageType == "left").FirstOrDefault(ci => ci.CarId == c.CarId).Uri,
+                    CarImageRight = c.CarImages.Where(ci => ci.ImageType == "right").FirstOrDefault(ci => ci.CarId == c.CarId).Uri,
+
+                    InsuranceUri = c.CarDocuments.Where(ci => ci.DocType == "insurance").FirstOrDefault(ci => ci.CarId == c.CarId).Uri,
+                    InsuranceUriIsVerified = c.CarDocuments.Where(ci => ci.DocType == "insurance").FirstOrDefault(ci => ci.CarId == c.CarId).Verified,
+
+                    RegistrationPaperUri = c.CarDocuments.Where(ci => ci.DocType == "registration").FirstOrDefault(ci => ci.CarId == c.CarId).Uri,
+                    RegistrationPaperUriIsVerified = c.CarDocuments.Where(ci => ci.DocType == "registration").FirstOrDefault(ci => ci.CarId == c.CarId).Verified,
+
+                    CertificateOfInspectionUri = c.CarDocuments.Where(ci => ci.DocType == "inspection").FirstOrDefault(ci => ci.CarId == c.CarId).Uri,
+                    CertificateOfInspectionUriIsVerified = c.CarDocuments.Where(ci => ci.DocType == "inspection").FirstOrDefault(ci => ci.CarId == c.CarId).Verified,
+
+                    Status = c.Status,
+                    AccountId = c.OwnerAccountId,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt,
+
+                    // *** PRICE ***
+                    BasePrice = (long)c.CarPricingPlans
+                        .Where(p => (bool)p.IsActive)
+                        .Select(p => p.BasePricePerDayCents)
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return (cars, totalCount);
         }
 
         public async Task VerifyCarInfo(Guid carId)

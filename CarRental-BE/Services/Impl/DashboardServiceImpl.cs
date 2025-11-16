@@ -117,19 +117,19 @@ namespace CarRental_BE.Services.Impl
 
         public async Task<PaginationResponse<CarVO_Full>> GetAllUnverifiedCarsAsync(
     PaginationRequest paginationRequest,
-    CarFilterDTO? filters = null)
+    CarFilterDTO? filters)
         {
-            var pageNumber = paginationRequest.PageNumber;
-            var pageSize = paginationRequest.PageSize;
-
             var (cars, totalCount) = await _carRepository.GetAllUnverifiedCarsAsync(
-                pageNumber,
-                pageSize,
+                paginationRequest.PageNumber,
+                paginationRequest.PageSize,
                 filters);
 
-            var carVOs = _mapper.Map<List<CarVO_Full>>(cars);
-
-            return new PaginationResponse<CarVO_Full>(carVOs, pageNumber, pageSize, totalCount);
+            return new PaginationResponse<CarVO_Full>(
+                cars,
+                paginationRequest.PageNumber,
+                paginationRequest.PageSize,
+                totalCount
+            );
         }
 
         public async Task ToggleAccountStatus(Guid accountId)
