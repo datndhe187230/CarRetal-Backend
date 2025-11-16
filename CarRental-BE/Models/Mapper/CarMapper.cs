@@ -1,7 +1,9 @@
-﻿using System.Linq;
-using AutoMapper;
+﻿using AutoMapper;
+using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.VO.Car;
+using System.Linq;
 using NewCar = CarRental_BE.Models.NewEntities.Car;
+using NewPlan = CarRental_BE.Models.NewEntities.CarPricingPlan;
 
 namespace CarRental_BE.Models.Mapper
 {
@@ -127,6 +129,37 @@ namespace CarRental_BE.Models.Mapper
                 .ForMember(d => d.District, o => o.MapFrom(s => s.Address != null ? s.Address.District : string.Empty))
                 .ForMember(d => d.CityProvince, o => o.MapFrom(s => s.Address != null ? s.Address.CityProvince : string.Empty))
                 .ForMember(d => d.Status, o => o.MapFrom(s => s.Status));
+
+            CreateMap<CarUpdateDTO, NewCar>()
+            .ForMember(dest => dest.MileageKm, opt => opt.MapFrom(src =>
+                src.Mileage.HasValue ? (decimal)src.Mileage.Value : (decimal?)null))
+            .ForMember(dest => dest.FuelType, opt => opt.MapFrom(src =>
+                src.IsGasoline.HasValue && src.IsGasoline.Value ? "gasoline" : "diesel"))
+            .ForMember(dest => dest.Transmission, opt => opt.MapFrom(src =>
+                src.IsAutomatic.HasValue && src.IsAutomatic.Value ? "automatic" : "manual"))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+            .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
+            // bo qua truong 
+            .ForMember(dest => dest.TermOfUse, opt => opt.Ignore())
+            .ForMember(dest => dest.LicensePlate, opt => opt.Ignore())
+            .ForMember(dest => dest.Brand, opt => opt.Ignore())
+            .ForMember(dest => dest.Model, opt => opt.Ignore())
+            .ForMember(dest => dest.Color, opt => opt.Ignore())
+            .ForMember(dest => dest.ProductionYear, opt => opt.Ignore())
+            .ForMember(dest => dest.NumberOfSeats, opt => opt.Ignore())
+            .ForMember(dest => dest.CarId, opt => opt.Ignore())
+            .ForMember(dest => dest.OwnerAccountId, opt => opt.Ignore())
+            .ForMember(dest => dest.AddressId, opt => opt.Ignore())
+            .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
+            .ForMember(dest => dest.TotalRentals, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.Address, opt => opt.Ignore())
+            .ForMember(dest => dest.Bookings, opt => opt.Ignore())
+            .ForMember(dest => dest.CarCalendars, opt => opt.Ignore())
+            .ForMember(dest => dest.CarDocuments, opt => opt.Ignore())
+            .ForMember(dest => dest.CarImages, opt => opt.Ignore())
+            .ForMember(dest => dest.OwnerAccount, opt => opt.Ignore())
+            .ForMember(dest => dest.Features, opt => opt.Ignore());
         }
     }
 }
