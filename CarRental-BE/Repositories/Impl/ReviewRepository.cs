@@ -2,7 +2,7 @@
 using CarRental_BE.Models;
 using CarRental_BE.Models.Common;
 using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.Entities;
+using CarRental_BE.Models.NewEntities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarRental_BE.Repositories.Impl
@@ -51,10 +51,10 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<PaginationResponse<FeedbackItemDTO>> GetFeedbackItemsByUserIdAsync(Guid userId, PaginationRequest request)
         {
-            var query = _context.Feedbacks
+            var query = _context.Reviews
                 .Include(f => f.BookingNumberNavigation)
                 .ThenInclude(b => b.Car)
-                .Where(f => f.BookingNumberNavigation != null && f.BookingNumberNavigation.Car != null && f.BookingNumberNavigation.Car.AccountId == userId)
+                .Where(f => f.BookingNumberNavigation != null && f.BookingNumberNavigation.Car != null && f.BookingNumberNavigation.Car.OwnerAccountId == userId)
                 .OrderByDescending(f => f.CreateAt)
                 .Select(f => new FeedbackItemDTO
                 {
