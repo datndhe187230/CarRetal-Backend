@@ -110,8 +110,7 @@ namespace CarRental_BE.Services.Impl
 
         public async Task<WalletVO_Transaction> TopupMoneyAdmin(TransactionDTO topupDTO)
         {
-            var adminAccountIdStr = _configuration["AdminAccountId"] ?? "9a2eb519-7054-4a1a-baed-a33dca077c37";
-            if (!Guid.TryParse(adminAccountIdStr, out var accountId)) throw new InvalidOperationException("Admin account id is not a valid GUID.");
+            var accountId = await getAdminWalletIdAsync();
             var wallet = await _walletRepository.GetWalletByAccountId(accountId) ?? await _walletRepository.CreateWallet(accountId);
             await _walletRepository.UpdateWalletBalance(wallet.AccountId, wallet.BalanceCents + topupDTO.Amount);
             var transaction = await _walletRepository.CreateTransaction(new Transaction
@@ -161,6 +160,31 @@ namespace CarRental_BE.Services.Impl
             return anyReverted;
         }
 
+        public async Task<bool> RevertBookingTransactionsByTypeAsync(string bookingNumber, TransactionType type)
+        {
+            var transactions = await _walletRepository.GetTransactionsByBookingNumberAsync(bookingNumber);
+            bool anyReverted = false;
+            foreach (var transaction in transactions)
+            {
+                if (transaction.Status != TransactionStatus.Processing.ToString()) continue;
+                if (!string.Equals(transaction.Type, type.ToString(), StringComparison.OrdinalIgnoreCase)) continue;
+                var wallet = await _walletRepository.GetWalletByAccountId(transaction.WalletId);
+                if (transaction.Type == TransactionType.Withdraw.ToString() || transaction.Type == TransactionType.offset_final_payment.ToString())
+                {
+                    // For remaining payment withdraw from renter, put the money back
+                    await _walletRepository.UpdateWalletBalance(wallet.AccountId, wallet.BalanceCents + transaction.AmountCents);
+                }
+                else
+                {
+                    // For counterpart topups (owner/admin), remove the previously added amount
+                    await _walletRepository.UpdateWalletBalance(wallet.AccountId, wallet.BalanceCents - transaction.AmountCents);
+                }
+                await _walletRepository.UpdateTransactionStatus(transaction.TransactionId, TransactionStatus.Failed.ToString());
+                anyReverted = true;
+            }
+            return anyReverted;
+        }
+
         public async Task<bool> UpdateTransactionStatusAsync(Guid transactionId, string status)
         {
             var transaction = await _walletRepository.GetTransactionById(transactionId);
@@ -179,6 +203,17 @@ namespace CarRental_BE.Services.Impl
         {
             if (!dateTime.HasValue) return string.Empty;
             return dateTime.Value.ToString("dd/MM/yyyy HH:mm", new CultureInfo("vi-VN"));
+        }
+
+        private async Task<Guid> getAdminWalletIdAsync()
+        {
+            var adminAccountIdStr = _configuration["AdminAccountId"];
+            if (string.IsNullOrEmpty(adminAccountIdStr))
+            {
+                adminAccountIdStr = await _walletRepository.GetAdminWalletId();
+            }
+            if (!Guid.TryParse(adminAccountIdStr, out var accountId)) throw new InvalidOperationException("Admin account id is not a valid GUID.");
+            return accountId;
         }
     }
 }

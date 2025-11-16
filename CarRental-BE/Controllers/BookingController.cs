@@ -53,23 +53,35 @@ namespace CarRental_BE.Controllers
         }
         // Get bookings with pagination (admin view)
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<PaginationResponse<BookingVO>>>> GetBookings(int page = 1, int pageSize = 5)
+        public async Task<ActionResult<ApiResponse<PaginationResponse<BookingVO>>>> GetBookings(int page =1, int pageSize =5)
         {
             var (bookings, totalCount) = await _bookingService.GetBookingsWithPagingAsync(page, pageSize);
             var paginatedResponse = new PaginationResponse<BookingVO>(bookings, page, pageSize, totalCount);
             return Ok(new ApiResponse<PaginationResponse<BookingVO>>(200, "Success", paginatedResponse));
         }
-        [HttpPut("{bookingNumber}/cancel")]
-        //task,async bat dong bo
+
+        [HttpPut("{bookingNumber}/customer-cancel")]
         public async Task<IActionResult> CancelBooking(string bookingNumber)
         {
-            var result = await _bookingService.CancelBookingAsync(bookingNumber);
+            var result = await _bookingService.CustomerCancelAsync(bookingNumber);
             if (!result.Success)
                 return BadRequest(new ApiResponse<string>(400, result.Message));
 
             return Ok(new ApiResponse<string>(200, "Booking cancelled successfully"));
         }
-        [HttpPut("{bookingNumber}/confirm-pickup")]
+        [HttpPut("{bookingNumber}/owner-cancel")]
+        [Authorize(Roles = "car_owner")]
+
+        public async Task<IActionResult> CarOwnerCancelBooking(string bookingNumber)
+        {
+            var result = await _bookingService.OwnerCancelAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+
+            return Ok(new ApiResponse<string>(200, "Booking cancelled successfully"));
+        }
+
+        [HttpPost("{bookingNumber}/confirm-pickup")]
         public async Task<IActionResult> ConfirmPickup(string bookingNumber)
         {
             var result = await _bookingService.ConfirmPickupAsync(bookingNumber);
@@ -78,15 +90,68 @@ namespace CarRental_BE.Controllers
 
             return Ok(new ApiResponse<string>(200, "Pick-up successfully"));
         }
-        [HttpPut("{bookingNumber}/return")]
-        public async Task<IActionResult> ReturnCar(string bookingNumber)
+
+        [HttpPost("{bookingNumber}/confirm")] // owner confirms booking
+        [Authorize(Roles = "car_owner")]
+
+        public async Task<IActionResult> ConfirmBookingFlow(string bookingNumber)
         {
-            var result = await _bookingService.ReturnCarAsync(bookingNumber);
+            var result = await _bookingService.ConfirmBookingAsync(bookingNumber);
             if (!result.Success)
                 return BadRequest(new ApiResponse<string>(400, result.Message));
-            return Ok(new ApiResponse<string>(200, "Return processed successfully"));
+            return Ok(new ApiResponse<string>(200, "Confirmed"));
         }
 
+        [HttpPost("{bookingNumber}/request-return")] // customer requests return
+        public async Task<IActionResult> RequestReturn(string bookingNumber)
+        {
+            var result = await _bookingService.RequestReturnAsync(bookingNumber);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Return requested"));
+        }
+
+        [HttpPost("{bookingNumber}/accept-return")] // owner accepts return
+        [Authorize(Roles = "car_owner")]
+
+        public async Task<IActionResult> AcceptReturn(string bookingNumber, [FromBody] AcceptReturnRequest req)
+        {
+            var result = await _bookingService.AcceptReturnAsync(bookingNumber, req?.Note, req?.PictureUrl, req?.ChargesCents);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Return accepted"));
+        }
+
+        [HttpPost("{bookingNumber}/reject-return")] // owner rejects return
+        [Authorize(Roles = "car_owner")]
+
+        public async Task<IActionResult> RejectReturn(string bookingNumber, [FromBody] RejectReturnRequest req)
+        {
+            var result = await _bookingService.RejectReturnAsync(bookingNumber, req?.Note, req?.PictureUrl);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Return rejected"));
+        }
+
+        [HttpPost("{bookingNumber}/customer-cancel")] // customer cancels
+        public async Task<IActionResult> CustomerCancel(string bookingNumber, [FromBody] CancelBookingRequest req)
+        {
+            var result = await _bookingService.CustomerCancelAsync(bookingNumber, req?.Reason, req?.PictureUrl);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Cancelled"));
+        }
+
+        [HttpPost("{bookingNumber}/owner-cancel")] // owner cancels
+        [Authorize(Roles = "car_owner")]
+
+        public async Task<IActionResult> OwnerCancel(string bookingNumber, [FromBody] CancelBookingRequest req)
+        {
+            var result = await _bookingService.OwnerCancelAsync(bookingNumber, req?.Reason, req?.PictureUrl);
+            if (!result.Success)
+                return BadRequest(new ApiResponse<string>(400, result.Message));
+            return Ok(new ApiResponse<string>(200, "Cancelled"));
+        }
 
         [HttpGet("detail/{bookingNumber}")]
         public async Task<ActionResult<ApiResponse<BookingDetailVO>>> GetBookingById(string bookingNumber)
@@ -119,7 +184,7 @@ namespace CarRental_BE.Controllers
 
             if (occupiedDates == null)
             {
-                occupiedDates = new OccupiedDateRange[0]; // Return empty array if no bookings
+                occupiedDates = Array.Empty<OccupiedDateRange>(); // Return empty array if no bookings
             }
             if (userDetails == null)
             {
@@ -159,8 +224,8 @@ namespace CarRental_BE.Controllers
             return new ApiResponse<BookingVO>(201, "Booking created successfully", createdBooking);
         }
 
+        [HttpPost("{bookingNumber}/confirm-deposit")]
         [Authorize(Roles = "car_owner")]
-        [HttpPut("{bookingNumber}/confirm-deposit")]
         public async Task<IActionResult> ConfirmDeposit(string bookingNumber)
         {
             var result = await _bookingService.ConfirmDepositAsync(bookingNumber);
@@ -182,13 +247,11 @@ namespace CarRental_BE.Controllers
             return Ok(new ApiResponse<BookingDetailVO>(200, "Success", bookingDetail));
         }
 
-
-
         [AllowAnonymous]
         [HttpGet("booking-details/batch")]
         public async Task<ActionResult<ApiResponse<Dictionary<string, BookingDetailVO>>>> GetBookingDetailsByCarIds([FromQuery] string[] carIds)
         {
-            if (carIds == null || carIds.Length == 0)
+            if (carIds == null || carIds.Length ==0)
                 return BadRequest(new ApiResponse<string>(400, "No car IDs provided", null));
 
             var result = new Dictionary<string, BookingDetailVO>();
@@ -206,6 +269,14 @@ namespace CarRental_BE.Controllers
             }
 
             return Ok(new ApiResponse<Dictionary<string, BookingDetailVO>>(200, "Success", result));
+        }
+
+        [HttpGet("summary/{bookingNumber}")]
+        public async Task<ActionResult<ApiResponse<BookingSummaryVO>>> GetBookingSummary(string bookingNumber)
+        {
+            var data = await _bookingService.GetBookingSummaryAsync(bookingNumber);
+            if (data == null) return NotFound(new ApiResponse<string>(404, "Booking not found"));
+            return Ok(new ApiResponse<BookingSummaryVO>(200, "Success", data));
         }
 
 

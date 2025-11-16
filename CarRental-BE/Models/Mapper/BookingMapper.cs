@@ -47,6 +47,16 @@ public static class BookingMapper
             Type = t.Type
         }).ToList();
 
+        var history = booking.BookingStatusHistories?.OrderBy(h => h.ChangedAt)
+            .Select(h => new BookingStatusHistoryVO
+            {
+                OldStatus = h.OldStatus,
+                NewStatus = h.NewStatus,
+                Note = h.Note,
+                PictureUrl = h.PictureUrl,
+                ChangedAt = h.ChangedAt
+            }).ToList();
+
         return new BookingDetailVO
         {
             BookingNumber = booking.BookingNumber,
@@ -116,6 +126,9 @@ public static class BookingMapper
             BasePrice = (long?)booking.BasePriceSnapshotCents,
             Deposit = (long?)booking.DepositSnapshotCents,
             PaymentType = booking.PaymentMethod,
+
+            // Status history
+            statusHistory = history
         };
     }
 

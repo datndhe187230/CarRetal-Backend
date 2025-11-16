@@ -20,5 +20,6 @@ namespace CarRental_BE.Repositories
         Task<List<Transaction>> GetTransactionsByBookingNumberAsync(string bookingNumber);
         Task<bool> UpdateTransactionStatus(Guid transactionId, string status);
         Task<bool> UpdateTransaction(Transaction transaction);
+        Task<string?> GetAdminWalletId();
     }
 }
