@@ -156,7 +156,20 @@ builder.Services.AddAuthentication(options =>
              return context.Response.WriteAsync(result);
          }
      };
- });
+ })
+.AddCookie("GoogleCookieScheme")
+// Google login scheme, explicitly tied to cookie sign-in
+.AddGoogle("Google", options =>
+{
+    options.ClientId = builder.Configuration["Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+    options.SignInScheme = "GoogleCookieScheme"; // this is crucial
+});
+
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.MinimumSameSitePolicy = SameSiteMode.None;
+});
 
 builder.Services.AddScoped<IVnPayService, VnPayService>();
 //Register AutoMapper 

@@ -4,6 +4,7 @@ using CarRental_BE.Models.DTO;
 using CarRental_BE.Models.NewEntities;
 using CarRental_BE.Models.VO;
 using CarRental_BE.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -70,6 +71,46 @@ namespace CarRental_BE.Controllers
                 data: null
             ));
         }
+
+        [AllowAnonymous]
+        [HttpGet("login/google")]
+        public async Task<IActionResult> GoogleLogin()
+        {
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback))
+            };
+            return Challenge(properties, "Google");
+        }
+
+        [AllowAnonymous]
+        [HttpGet("google-callback")]
+        public async Task<IActionResult> GoogleCallback()
+        {
+
+            Console.WriteLine("Google Callback Invoked");
+
+            var result = await HttpContext.AuthenticateAsync("GoogleCookieScheme");
+
+            if (!result.Succeeded || result?.Principal == null)
+            {
+                return BadRequest("DAHELLLL");
+
+            }
+
+            var token = await _authService.LoginWithGoogleAsync(result.Principal);
+
+            Response.Cookies.Append("Access_Token", token.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddHours(1)
+            });
+
+            return Redirect("http://localhost:3000");
+        }
+
 
 
     }
