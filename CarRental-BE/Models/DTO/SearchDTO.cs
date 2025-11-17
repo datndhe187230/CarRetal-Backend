@@ -9,8 +9,8 @@ namespace CarRental_BE.Models.DTO
         public string? LocationDistrict { get; set; } // Optional
         public string? LocationWard { get; set; } // Optional
 
-        public DateTime? PickupTime { get; init; }
-        public DateTime? DropoffTime { get; init; }
+        public DateTime? PickupTime { get; set; }
+        public DateTime? DropOffTime { get; set; }
 
         public int PriceRangeMin { get; set; } = 0; // Default to 0 if not provided
         public int PriceRangeMax { get; set; } = int.MaxValue; // Default to max if not provided

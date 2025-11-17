@@ -201,14 +201,43 @@ namespace CarRental_BE.Repositories.Impl
                 && (string.IsNullOrEmpty(searchDTO.LocationWard) || (c.Address != null && c.Address.Ward == searchDTO.LocationWard))
                 && c.Status == "verified");
 
-            if (searchDTO.PickupTime.HasValue && searchDTO.DropoffTime.HasValue)
+            // availability by pickup/drop times (each can be null)
+            if (searchDTO.PickupTime.HasValue && searchDTO.DropOffTime.HasValue)
             {
                 var pickup = searchDTO.PickupTime.Value;
-                var drop = searchDTO.DropoffTime.Value;
-                query = query.Where(c => !_context.Bookings.Any(b => b.CarId == c.CarId && b.Status != "completed" && b.Status != "cancelled"
-                    && ((pickup >= b.PickUpTime && pickup <= (b.ActualReturnTime ?? b.DropOffTime))
-                    || (drop >= b.PickUpTime && drop <= (b.ActualReturnTime ?? b.DropOffTime))
-                    || (b.PickUpTime >= pickup && b.PickUpTime <= drop))));
+                var drop = searchDTO.DropOffTime.Value;
+
+                query = query.Where(c => !_context.Bookings.Any(b =>
+                    b.CarId == c.CarId &&
+                    b.Status != "completed" &&
+                    b.Status != "cancelled" &&
+                    b.PickUpTime < drop &&
+                    (b.ActualReturnTime ?? b.DropOffTime) > pickup
+                ));
+            }
+            else if (searchDTO.PickupTime.HasValue)
+            {
+                var pickup = searchDTO.PickupTime.Value;
+
+                query = query.Where(c => !_context.Bookings.Any(b =>
+                    b.CarId == c.CarId &&
+                    b.Status != "completed" &&
+                    b.Status != "cancelled" &&
+                    b.PickUpTime <= pickup &&
+                    (b.ActualReturnTime ?? b.DropOffTime) > pickup
+                ));
+            }
+            else if (searchDTO.DropOffTime.HasValue)
+            {
+                var drop = searchDTO.DropOffTime.Value;
+
+                query = query.Where(c => !_context.Bookings.Any(b =>
+                    b.CarId == c.CarId &&
+                    b.Status != "completed" &&
+                    b.Status != "cancelled" &&
+                    b.PickUpTime <= drop &&
+                    (b.ActualReturnTime ?? b.DropOffTime) > drop
+                ));
             }
 
             // active pricing plan
@@ -416,9 +445,10 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task VerifyCarInfo(Guid carId)
         {
-            var car = await _context.Cars.FirstOrDefaultAsync(c => c.CarId == carId);
+            var car = await _context.Cars.Include(c => c.CarDocuments).FirstOrDefaultAsync(c => c.CarId == carId);
             if (car == null) return;
             car.Status = CarStatus.verified.ToString();
+            car.CarDocuments.ToList().ForEach(doc => doc.Verified = true);
             car.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
@@ -472,7 +502,7 @@ namespace CarRental_BE.Repositories.Impl
                 .Include(c => c.Address)
                 .Include(c => c.CarImages)
                 .Include(c => c.CarDocuments)
-                .Include(c => c.CarPricingPlans) 
+                .Include(c => c.CarPricingPlans)
                 .Include(c => c.Features)
                 .Include(c => c.Bookings)
                     .ThenInclude(b => b.Reviews)
