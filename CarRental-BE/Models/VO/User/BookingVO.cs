@@ -19,5 +19,7 @@
     public string? CarImageLeft { get; set; }
     public string? CarImageRight { get; set; }
 
+    public bool IsReviewed { get; set; }
+
 
 }

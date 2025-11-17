@@ -29,7 +29,8 @@ public static class BookingMapper
             CarImageFront = booking.Car?.CarImages.Where(i => i.ImageType == "front").Select(i => i.Uri).FirstOrDefault(),
             CarImageBack = booking.Car?.CarImages.Where(i => i.ImageType == "back").Select(i => i.Uri).FirstOrDefault(),
             CarImageLeft = booking.Car?.CarImages.Where(i => i.ImageType == "left").Select(i => i.Uri).FirstOrDefault(),
-            CarImageRight = booking.Car?.CarImages.Where(i => i.ImageType == "right").Select(i => i.Uri).FirstOrDefault()
+            CarImageRight = booking.Car?.CarImages.Where(i => i.ImageType == "right").Select(i => i.Uri).FirstOrDefault(),
+            IsReviewed = booking.Reviews != null && booking.Reviews.Any(r => r.FromAccountId == booking.RenterAccountId)
         };
     }
 

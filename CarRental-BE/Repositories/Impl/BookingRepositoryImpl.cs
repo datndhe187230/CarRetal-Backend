@@ -22,25 +22,37 @@ namespace CarRental_BE.Repositories.Impl
 
         public async Task<List<Booking>> GetAllBookingsAsync()
         {
-            return await _context.Bookings.Include(b => b.Car).ToListAsync();
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Include(b => b.Reviews)
+                .ToListAsync();
         }
 
         public async Task<List<Booking>> GetBookingsByAccountIdAsync(Guid accountId)
         {
-            return await _context.Bookings.Include(b => b.Car).Where(b => b.RenterAccountId == accountId).OrderByDescending(b => b.CreatedAt).ToListAsync();
+            return await _context.Bookings
+                .Include(b => b.Car)
+                .Include(b => b.Reviews)
+                .Where(b => b.RenterAccountId == accountId)
+                .OrderByDescending(b => b.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task<Booking?> GetByBookingNumberAsync(string bookingNumber)
             => await _context.Bookings
             .Include(b => b.Car)
-            .ThenInclude(c=>c.CarPricingPlans)
+            .ThenInclude(c => c.CarPricingPlans)
             .Include(b => b.RenterAccount).ThenInclude(a => a.Wallet)
             .Include(b => b.Transactions)
             .FirstOrDefaultAsync(b => b.BookingNumber == bookingNumber);
 
         public async Task<(List<Booking>, int)> GetBookingsWithPagingAsync(int page, int pageSize)
         {
-            var query = _context.Bookings.Include(b => b.Car).Include(b => b.RenterAccount).OrderByDescending(b => b.CreatedAt);
+            var query = _context.Bookings
+                .Include(b => b.Car)
+                .Include(b => b.RenterAccount)
+                .Include(b => b.Reviews)
+                .OrderByDescending(b => b.CreatedAt);
             int totalCount = await query.CountAsync();
             var items = await query.Skip((page -1) * pageSize).Take(pageSize).ToListAsync();
             return (items, totalCount);
@@ -56,10 +68,10 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<Booking?> GetBookingByBookingNumberAsync(string id)
         {
             return await _context.Bookings
-                .Include(b=>b.DropOffAddress)
-                .Include(b=>b.PickUpAddress)
-                .Include(b=>b.BookingDrivers)
-                .Include(b => b.Car).ThenInclude(c=>c.Address)
+                .Include(b => b.DropOffAddress)
+                .Include(b => b.PickUpAddress)
+                .Include(b => b.BookingDrivers)
+                .Include(b => b.Car).ThenInclude(c => c.Address)
                 .Include(b => b.RenterAccount).ThenInclude(a => a.UserProfile)
                 .Include(b => b.BookingStatusHistories)
                 .Include(b => b.Transactions)
@@ -222,13 +234,13 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<(List<Booking> Items, int TotalCount)> GetOwnerBookingsFilteredAsync(Guid ownerAccountId, CarOwnerBookingListDTO query)
         {
             var q = _context.Bookings
-                .Include(b=>b.DropOffAddress)
-                .Include(b=>b.PickUpAddress)
+                .Include(b => b.DropOffAddress)
+                .Include(b => b.PickUpAddress)
                 .Include(b => b.Car)
-                .ThenInclude(c=>c.Address)
+                .ThenInclude(c => c.Address)
                 .Include(b => b.Transactions)
                 .Include(b => b.RenterAccount)
-                .Include(b=>b.BookingDrivers)
+                .Include(b => b.BookingDrivers)
                 .Where(b => b.Car.OwnerAccountId == ownerAccountId)
                 .AsQueryable();
             if (!string.IsNullOrWhiteSpace(query.Search))
