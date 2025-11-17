@@ -12,7 +12,7 @@ namespace CarRental_BE.Controllers;
 
 [Route("api/[Controller]")] 
 [ApiController]
-[Authorize]
+[Authorize(Roles = "admin")]
 public class AdminController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -24,7 +24,6 @@ public class AdminController : ControllerBase
         _logger = logger;
     }
 
-    [Authorize(Roles ="admin")]
     [HttpPatch("{id}/status")]
     public async Task<ActionResult<ApiResponse<object>>> UpdateUserStatus(Guid id, [FromBody] UserStatusUpdateRequest request)
     {

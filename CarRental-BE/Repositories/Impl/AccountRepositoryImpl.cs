@@ -17,7 +17,6 @@ namespace CarRental_BE.Repositories.Impl
         public async Task<Account?> getAccountByEmailWithRole(string email)
         {
             var account = await _carRentalContext.Accounts.Include(a => a.Role).FirstOrDefaultAsync(a => a.Email == email);
-            if (account == null) throw new UserNotFoundException(email);
             return account;
         }
 
@@ -64,12 +63,16 @@ namespace CarRental_BE.Repositories.Impl
             return await _carRentalContext.Accounts.Include(a => a.Role).FirstOrDefaultAsync(a => a.AccountId == currentUserId);
         }
 
-        public async Task CreateAccountAsync(Account newAccount, UserProfile newUserProfile, Wallet newWallet)
+        public async Task<Account?> CreateAccountAsync(Account newAccount, UserProfile newUserProfile, Wallet newWallet)
         {
             _carRentalContext.Accounts.Add(newAccount);
             _carRentalContext.UserProfiles.Add(newUserProfile);
             _carRentalContext.Wallets.Add(newWallet);
             await _carRentalContext.SaveChangesAsync();
+
+            var account = await _carRentalContext.Accounts.Include(a => a.Role).FirstOrDefaultAsync(a => a.AccountId == newAccount.AccountId);
+
+            return account;
         }
     }
 }

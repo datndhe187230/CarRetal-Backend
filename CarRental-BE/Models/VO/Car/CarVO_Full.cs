@@ -24,7 +24,7 @@ namespace CarRental_BE.Models.VO.Car
 
         public double? FuelConsumption { get; set; }
 
-        public bool? IsGasoline { get; set; }
+        public string FuelType { get; set; }
 
         public bool? IsAutomatic { get; set; }
 

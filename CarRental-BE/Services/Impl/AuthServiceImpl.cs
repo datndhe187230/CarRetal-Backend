@@ -136,9 +136,9 @@ namespace CarRental_BE.Services.Impl
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                await _accountRepository.CreateAccountAsync(newAccount, newUserProfile, newWallet);
+                var created_account = await _accountRepository.CreateAccountAsync(newAccount, newUserProfile, newWallet);
 
-                userAccount = newAccount;
+                userAccount = created_account;
 
             }
 

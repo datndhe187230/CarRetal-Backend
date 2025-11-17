@@ -1,5 +1,6 @@
 ﻿using CarRental_BE.Models.DTO;
-using CarRental_BE.Models.NewEntities; // switched from old Entities
+using CarRental_BE.Models.NewEntities;
+using CarRental_BE.Models.VO.Car; // switched from old Entities
 
 namespace CarRental_BE.Repositories
 {
@@ -18,7 +19,7 @@ namespace CarRental_BE.Repositories
         Task<Car?> AddCar(AddCarDTO addCarDTO);
 
         Task<List<CarSummaryDTO>> GetAllWithFeedback();
-        Task<(List<Car> cars, int totalCount)> GetAllUnverifiedCarsAsync(
+        Task<(List<CarVO_Full> cars, int totalCount)> GetAllUnverifiedCarsAsync(
         int pageNumber,
         int pageSize,
         CarFilterDTO? filters = null); // Thêm tham số filters
@@ -29,6 +30,8 @@ namespace CarRental_BE.Repositories
         Task<Car?> GetCarById(Guid carId);
 
         Task<Car?> UpdateCar(Car car);
+
+        Task<Car?> GetCarDetailById(Guid carId);
     }
 
 

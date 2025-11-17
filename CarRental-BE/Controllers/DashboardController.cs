@@ -142,6 +142,7 @@ namespace CarRental_BE.Controllers
             return Ok(new ApiResponse<PaginationResponse<AccountVO>>(200, "Paginated accounts retrieved successfully", paginatedAccounts));
         }
 
+        [AllowAnonymous]
         [HttpGet("cars/unverified/paginated")]
         public async Task<ActionResult<ApiResponse<PaginationResponse<CarVO_Full>>>> GetAllUnverifiedCars(
     [FromQuery] int pageNumber = 1,
