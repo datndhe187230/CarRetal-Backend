@@ -107,9 +107,7 @@
         public bool? CertificateOfInspectionUriIsVerified { get; set; }
 
         public string Status { get; set; } = null!;
-
-        
-
-
+        public List<CarPricingPlanDTO>? PricePlans { get; set; }
+        public CarPricingPlanDTO? ActivePricePlan { get; set; }
     }
 }

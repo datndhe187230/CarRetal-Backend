@@ -30,6 +30,8 @@ namespace CarRental_BE.Repositories
         Task<Car?> GetCarById(Guid carId);
 
         Task<Car?> UpdateCar(Car car);
+
+        Task<Car?> GetCarDetailById(Guid carId);
     }
 
 

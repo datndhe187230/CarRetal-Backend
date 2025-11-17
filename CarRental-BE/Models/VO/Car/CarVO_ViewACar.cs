@@ -50,6 +50,9 @@
         public string? District { get; set; }
 
         public string? CityProvince { get; set; }
+        public List<CarVO_PricePlan> PricePlans { get; set; } = new();
+
+        public CarVO_PricePlan? ActivePricePlan { get; set; }
     }
 
 }

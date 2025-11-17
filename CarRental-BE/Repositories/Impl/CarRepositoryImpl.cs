@@ -139,7 +139,7 @@ namespace CarRental_BE.Repositories.Impl
 
         public Task<(List<Car> cars, int totalCount)> GetAccountId(Guid accountId, int pageNumber, int pageSize)
         {
-            var query = _context.Cars.Where(c => c.OwnerAccountId == accountId);
+            var query = _context.Cars.Where(c => c.OwnerAccountId == accountId).Include(c => c.CarPricingPlans);
             var totalCount = query.Count();
             var cars = query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
             return Task.FromResult((cars, totalCount));
@@ -459,7 +459,24 @@ namespace CarRental_BE.Repositories.Impl
 
         public Task<Car?> GetCarById(Guid carId)
         {
-            return _context.Cars.Include(c => c.CarImages).Include(c => c.CarDocuments).FirstOrDefaultAsync(c => c.CarId == carId);
+            return _context.Cars
+                .Include(c => c.CarPricingPlans)
+                .Include(c => c.CarImages)
+                .Include(c => c.CarDocuments)
+                .FirstOrDefaultAsync(c => c.CarId == carId);
+        }
+
+        public async Task<Car?> GetCarDetailById(Guid carId)
+        {
+            return await _context.Cars
+                .Include(c => c.Address)
+                .Include(c => c.CarImages)
+                .Include(c => c.CarDocuments)
+                .Include(c => c.CarPricingPlans) 
+                .Include(c => c.Features)
+                .Include(c => c.Bookings)
+                    .ThenInclude(b => b.Reviews)
+                .FirstOrDefaultAsync(c => c.CarId == carId);
         }
 
         public async Task<Car?> UpdateCar(Car car)

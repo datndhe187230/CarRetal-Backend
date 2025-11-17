@@ -10,6 +10,8 @@ using CarRental_BE.Models.NewEntities;
 public class CarServiceImpl : ICarService
 {
     private readonly ICarRepository _carRepository;
+
+    private readonly ICarPricingPlanRepository carPricingPlanRepository;
     private readonly IMapper _mapper;
 
     public CarServiceImpl(ICarRepository carRepository, IMapper mapper)
@@ -70,9 +72,24 @@ public class CarServiceImpl : ICarService
 
     public async Task<Car?> UpdateCarEntity(Guid carId, CarUpdateDTO updatedCar)
     {
-        var car = await _carRepository.GetCarById(carId);
+        var car = await _carRepository.GetCarDetailById(carId);
         if (car == null) return null;
+
         _mapper.Map(updatedCar, car);
+
+        if (updatedCar.BasePrice.HasValue || updatedCar.Deposit.HasValue)
+        {
+            var activePlan = car.CarPricingPlans.FirstOrDefault(p => p.IsActive == true);
+            if (activePlan != null)
+            {
+                if (updatedCar.BasePrice.HasValue)
+                    activePlan.BasePricePerDayCents = (decimal)updatedCar.BasePrice.Value;
+                if (updatedCar.Deposit.HasValue)
+                    activePlan.DepositCents = (decimal)updatedCar.Deposit.Value;
+            }
+        }
+
+        car.UpdatedAt = DateTime.UtcNow;
         return await _carRepository.UpdateCar(car);
     }
 
